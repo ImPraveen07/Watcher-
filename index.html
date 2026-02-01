@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,9 +83,9 @@
     import * as THREE from 'three';
     import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
+    // --- MEMORY UTILS ---
     const disposeObj = (obj) => {
         obj.traverse(node => {
             if (node.isMesh) {
@@ -132,12 +130,8 @@
     const clock = new THREE.Clock();
     const scene = new THREE.Scene(); 
     const cssScene = new THREE.Scene();
-    
-    // Near Plane Adjustment to 10 for performance
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 10, 7000);
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 7000);
     camera.rotation.order = 'YXZ';
-    const frustum = new THREE.Frustum();
-    const projScreenMatrix = new THREE.Matrix4();
 
     const cssRenderer = new CSS3DRenderer();
     cssRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -147,9 +141,8 @@
     cssRenderer.domElement.style.pointerEvents = 'none'; 
     document.body.appendChild(cssRenderer.domElement);
 
-    // No Antialiasing for VRAM savings
     const renderer = new THREE.WebGLRenderer({ 
-        antialias: false, 
+        antialias: true, 
         alpha: true,
         powerPreference: "high-performance",
         precision: "mediump" 
@@ -159,6 +152,7 @@
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = .5;
+
     renderer.setClearColor(0x111111, 1); 
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0';
@@ -167,32 +161,89 @@
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+
+    // LIGHTING SETUP FOR DYNAMIC ROOMS
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
+    
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
     dirLight.position.set(0, 300, 0); 
     scene.add(dirLight);
 
     const texLoader = new THREE.TextureLoader();
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
     const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader);
-
     const sharedPlaneGeom = new THREE.PlaneGeometry(1, 1);
+
     const textureCache = {};
     const getTex = (url) => {
         if (!textureCache[url]) textureCache[url] = texLoader.load(url);
         return textureCache[url];
     };
 
+    // --- FAIRY LIGHTS GENERATION ---
+    function createFairyLights() {
+        const bulbCount = 450; 
+        const stringCount = 22; 
+        // Tiny sphere geometry for realistic LED bulb look (not square)
+        const bulbGeo = new THREE.SphereGeometry(1.5, 6, 6); 
+        const bulbMat = new THREE.MeshStandardMaterial({
+            color: 0xffaa33, 
+            emissive: 0xffddaa,
+            emissiveIntensity: 5.0, // High emission for glow
+            roughness: 0.4,
+            metalness: 0.1
+        });
+
+        const instancedMesh = new THREE.InstancedMesh(bulbGeo, bulbMat, bulbCount);
+        const dummy = new THREE.Object3D();
+
+        const startX = -600, endX = 600;
+        const startY = floorY + T - 10; // Ceiling height
+        const zPos = -590; // Back wall of TV room
+
+        let index = 0;
+        for(let i = 0; i < stringCount; i++) {
+            const x = THREE.MathUtils.lerp(startX, endX, i / stringCount);
+            const thisLength = 220 + (Math.random() * 80); // Random drop length
+            const bulbsPerString = Math.floor(bulbCount / stringCount);
+
+            for(let j = 0; j < bulbsPerString; j++) {
+                const y = startY - (j * (thisLength/bulbsPerString));
+                // Add natural sway/jitter
+                const wobbleX = Math.sin(j * 0.8) * 3;
+                const wobbleZ = Math.cos(j * 0.5) * 3;
+
+                dummy.position.set(x + wobbleX, y, zPos + wobbleZ);
+                dummy.scale.setScalar(1 + Math.random() * 0.6); 
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(index++, dummy.matrix);
+            }
+        }
+        instancedMesh.instanceMatrix.needsUpdate = true;
+        scene.add(instancedMesh);
+
+        // Add REAL light sources to reflect on objects (Simulating the glow)
+        // We add a few PointLights instead of one per bulb to save performance
+        const lightColors = [0xffaa00, 0xffccaa, 0xffaa33];
+        for(let k=0; k<6; k++) {
+            const pl = new THREE.PointLight(lightColors[k%3], 80, 500, 1.5);
+            pl.position.set(
+                THREE.MathUtils.lerp(startX + 100, endX - 100, k/5),
+                startY - 120,
+                zPos + 50
+            );
+            scene.add(pl);
+        }
+    }
+
     const glbItems = [
-        { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
-        { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
+           { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
+            { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
         { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
         { src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
         { src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
         { src: 'tablecloth_lowpoly.glb', p: [79, -35, -265], r: [0, 90], s: [90, 90, 90] },
-        { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
+         { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
         { src: 'boqu.glb', p: [-41, 12, -380], r: [82, 176], s: [20, 20, 20] },
         { src: 'bhat.glb', p: [48, 20, -374], r: [0, 0], s: [6, 6, 6] },
         { src: 'glass.glb', p: [32, 15, -386], r: [0, 188], s: [9, 9, 9] },
@@ -208,43 +259,8 @@
         { src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
         { src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
         { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
-        { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
+         { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
     ];
-function buildRealLightString(config, spawnPos) {
-    const group = new THREE.Group();
-    const bulbGeo = new THREE.CapsuleGeometry(1.2, 3, 4, 12);
-    const bulbMat = new THREE.MeshBasicMaterial({ color: config.color });
-    const glowGeo = new THREE.SphereGeometry(4.5, 16, 16);
-    const glowMat = new THREE.MeshBasicMaterial({ color: config.color, transparent: true, opacity: 0.25 });
-
-    for (let s = 0; s < config.strands; s++) {
-        const xOffset = (s * 45) - (config.strands * 22.5);
-        const points = [];
-        for (let i = 0; i <= 15; i++) {
-            points.push(new THREE.Vector3(xOffset + Math.sin(i * 0.4) * 3, -i * 35, Math.cos(i * 0.4) * 2));
-        }
-        const curve = new THREE.CatmullRomCurve3(points);
-        const wire = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0x050505 }));
-        group.add(wire);
-
-        for (let i = 1; i <= config.bulbs; i++) {
-            const pos = curve.getPoint(i / config.bulbs);
-            const side = (i % 2 === 0) ? 1 : -1;
-            const bulbContainer = new THREE.Group();
-            bulbContainer.position.set(pos.x + (side * 2.5), pos.y, pos.z);
-            bulbContainer.rotation.z = side * 0.6;
-            bulbContainer.add(new THREE.Mesh(bulbGeo, bulbMat));
-            bulbContainer.add(new THREE.Mesh(glowGeo, glowMat));
-            const pLight = new THREE.PointLight(0xffaa44, config.intensity, 150);
-            pLight.decay = 2; 
-            bulbContainer.add(pLight);
-            group.add(bulbContainer);
-        }
-    }
-    group.position.copy(spawnPos);
-    scene.add(group);
-    addUserModel(group, "Real_LED_String", false);
-}
 
     async function boot() {
         await initDB();
@@ -287,7 +303,11 @@ function buildRealLightString(config, spawnPos) {
                     model.position.set(item.p[0], item.p[1], item.p[2]);
                     model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
                     model.scale.set(item.s[0], item.s[1], item.s[2]);
-                    // Animations off as requested
+                    if (gltf.animations.length > 0) {
+                        const mixer = new THREE.AnimationMixer(model);
+                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                        mixers.push(mixer);
+                    }
                     scene.add(model);
                     URL.revokeObjectURL(url);
                 });
@@ -347,6 +367,8 @@ function buildRealLightString(config, spawnPos) {
             scene.add(m);
         });
 
+        createFairyLights();
+
         setTimeout(() => {
             document.getElementById('loader-screen').style.opacity = '0';
             setTimeout(() => { document.getElementById('loader-screen').style.display = 'none'; animate(); }, 500);
@@ -369,7 +391,7 @@ function buildRealLightString(config, spawnPos) {
     const config = [
         { id: 'posX', label: 'Pos X', min: -1200, max: 1200 }, { id: 'posY', label: 'Pos Y', min: -150, max: 800 }, { id: 'posZ', label: 'Pos Z', min: -1200, max: 1200 }, 
         { id: 'rotY', label: 'Rot Horiz', min: 0, max: 360, snaps: [0, 90, 180, 270] }, { id: 'rotX', label: 'Rot Vert', min: 0, max: 360, snaps: [0, 90, 180, 270] }, 
-        { id: 'width', label: 'Scale W', min: -800, max: 800 }, { id: 'height', label: 'Scale H', min: -800, max: 800 }
+        { id: 'width', label: 'Scale W', min: 1, max: 800 }, { id: 'height', label: 'Scale H', min: 1, max: 800 }
     ];
 
     const dynContainer = document.getElementById('dynamic-controls');
@@ -381,45 +403,23 @@ function buildRealLightString(config, spawnPos) {
         document.getElementById('box-'+c.id).oninput = () => { document.getElementById(c.id).value = document.getElementById('box-'+c.id).value; updateTransform(); };
     });
 
- 
-    document.getElementById('file-input').onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Use your requested position
-    const spawnPos = new THREE.Vector3(599, 250, -306);
-
-    // If you upload the HTML file, it runs the Light Builder
-    if (file.name.endsWith('.html')) {
-        const text = await file.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
-        const data = doc.getElementById('light-config');
-
-        if (data) {
-            const config = {
-                color: data.getAttribute('data-bulb-color'),
-                intensity: parseFloat(data.getAttribute('data-intensity')),
-                strands: parseInt(data.getAttribute('data-strands')),
-                bulbs: parseInt(data.getAttribute('data-bulbs-per-strand'))
-            };
-            buildRealLightString(config, spawnPos);
+    document.getElementById('file-input').onchange = (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const url = URL.createObjectURL(file);
+        const spawnPos = new THREE.Vector3(0, 0, -100).applyQuaternion(camera.quaternion).add(camera.position);
+        if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            texLoader.load(url, (tex) => {
+                const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: tex, side: 2, transparent: true }));
+                m.position.copy(spawnPos); m.scale.set(60, 60, 1); addUserModel(m, file.name, true);
+            });
+        } else {
+            loader.load(url, (gltf) => { 
+                const model = gltf.scene;
+                model.traverse(node => { if(node.isMesh && node.material) { node.material.envMapIntensity = 2.5; node.material.roughness = 0.1; node.material.metalness = 0.8; }});
+                model.position.copy(spawnPos); addUserModel(model, file.name, false); 
+            });
         }
-        return;
-    }
-
-    // Keep your existing GLB and Image logic below this...
-    const url = URL.createObjectURL(file);
-    if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
-        texLoader.load(url, (tex) => {
-            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshStandardMaterial({ map: tex, side: 2, transparent: true, roughness: 0.8 }));
-            m.position.copy(spawnPos); m.scale.set(60, 60, 1); addUserModel(m, file.name, true);
-        });
-    } else {
-        loader.load(url, (gltf) => { gltf.scene.position.copy(spawnPos); addUserModel(gltf.scene, file.name, false); });
-    }
-};
-
+    };
 
     function addUserModel(mesh, name, isImg) {
         scene.add(mesh);
@@ -443,13 +443,12 @@ function buildRealLightString(config, spawnPos) {
         d.mesh.position.set(val('posX'), val('posY'), val('posZ'));
         d.mesh.rotation.set(THREE.MathUtils.degToRad(val('rotX')), THREE.MathUtils.degToRad(val('rotY')), 0);
         if(d.isImg) d.mesh.scale.set(val('width'), val('height'), 1); else d.mesh.scale.set(val('width'), val('width'), val('width'));
-        d.label.position.copy(d.mesh.position); 
-        d.label.position.y += (d.isImg ? Math.abs(val('height'))/2 : Math.abs(val('width'))) + 15;
+        d.label.position.copy(d.mesh.position); d.label.position.y += (d.isImg ? val('height')/2 : val('width')) + 15;
     }
 
     window.editM = (i) => startEditing(i);
     window.delM = (i) => { 
-        disposeObj(savedModels[i].mesh);
+        disposeObj(savedModels[i].mesh); // FULL GPU CLEAN
         scene.remove(savedModels[i].mesh); 
         cssScene.remove(savedModels[i].label); 
         savedModels.splice(i, 1); window.editingIndex = -1; updateListUI(); 
@@ -504,24 +503,7 @@ function buildRealLightString(config, spawnPos) {
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
-        
-        // Frustum Intersection Logic
-        projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(projScreenMatrix);
-
-        // Strict Visibility for Meshes
-        scene.traverse(obj => {
-            if (obj.isMesh && obj !== doorMesh) {
-                obj.visible = frustum.intersectsObject(obj);
-            }
-        });
-
-        // CSS Visibility Hidden Logic for RAM Recovery
-        if (isPowered) {
-            const isVisible = frustum.intersectsObject(occMesh);
-            frameEl.style.visibility = isVisible ? 'visible' : 'hidden';
-        }
-
+        mixers.forEach(m => m.update(delta));
         if(!isInteracting && (move.x !== 0 || move.y !== 0)) {
             fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize();
             rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize();
@@ -535,13 +517,18 @@ function buildRealLightString(config, spawnPos) {
         pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
         iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
         doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
+
+        // --- DYNAMIC LIGHTING LOGIC ---
+        // If camera is in TV room (z < 0), dim lights. If in Spawn room, bright lights.
+        const targetInt = camera.position.z < -20 ? 0.3 : 1.2;
+        const targetDir = camera.position.z < -20 ? 0.2 : 2.5;
+        ambientLight.intensity += (targetInt - ambientLight.intensity) * 0.05;
+        dirLight.intensity += (targetDir - dirLight.intensity) * 0.05;
+
         cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
         document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
     }
-  
-
     boot();
-
 </script>
 </body>
 </html>
