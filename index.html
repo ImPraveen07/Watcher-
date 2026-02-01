@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sleek Gallery - Party Mode</title>
+    <title>Sleek Gallery - Pro Ultra V2 Fixed</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; user-select: none; }
         #loader-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
-        .loader-ring { width: 60px; height: 60px; border: 3px solid #222; border-top: 3px solid #ffaa00; border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; }
+        .loader-ring { width: 60px; height: 60px; border: 3px solid #222; border-top: 3px solid #007bff; border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .loader-text { color: #fff; font-size: 10px; margin-top: 20px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
-        #loader-stats { color: #ffaa00; font-size: 11px; margin-top: 8px; font-family: monospace; }
+        #loader-stats { color: #007bff; font-size: 11px; margin-top: 8px; font-family: monospace; }
         .progress-container { width: 180px; height: 2px; background: #222; margin-top: 15px; border-radius: 2px; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: #ffaa00; transition: width 0.3s; }
+        #progress-bar { width: 0%; height: 100%; background: #007bff; transition: width 0.3s; }
         #ui-layer, #pro-editor, #model-list, .action-btn { z-index: 1000; position: absolute; }
         #ui-layer { top: 15px; width: 100%; text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        #room-display { font-size: 10px; color: #fff; background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 4px; letter-spacing: 1px; border: 1px solid #333; }
+        #room-display { font-size: 10px; color: #fff; background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 4px; letter-spacing: 1px; }
         #copy-btn { pointer-events: auto; background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 11px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         #pro-editor { left: 8px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.85); color: white; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; gap: 2px; pointer-events: auto; font-size: 9px; width: 175px; max-height: 85vh; overflow-y: auto; border: 1px solid #444; }
         .ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
         .val-grp { display: flex; align-items: center; gap: 2px; }
-        .num-in { width: 40px; background: #111; border: 1px solid #444; color: #ffaa00; text-align: center; font-size: 9px; padding: 2px 0; }
+        .num-in { width: 40px; background: #111; border: 1px solid #444; color: #007bff; text-align: center; font-size: 9px; padding: 2px 0; }
         .step-b { background: #444; color: #fff; border: none; width: 20px; height: 20px; cursor: pointer; font-weight: bold; }
-        #pro-editor input[type="range"] { width: 100%; margin: 2px 0 6px 0; height: 3px; accent-color: #ffaa00; }
+        #pro-editor input[type="range"] { width: 100%; margin: 2px 0 6px 0; height: 3px; accent-color: #007bff; }
         .snap-row { display: flex; justify-content: space-between; margin-bottom: 4px; gap: 2px; }
         .snap-dot { background: #333; color: #fff; border: 1px solid #555; font-size: 8px; padding: 2px 0; flex: 1; text-align: center; cursor: pointer; }
         #model-list { right: 10px; top: 15px; width: 150px; background: rgba(0,0,0,0.7); color: white; padding: 8px; border-radius: 6px; font-size: 9px; pointer-events: auto; max-height: 40vh; overflow-y: auto; border: 1px solid #444; }
-        .list-item { background: #333; padding: 6px; margin-top: 4px; border-radius: 3px; border-left: 3px solid #ffaa00; }
+        .list-item { background: #333; padding: 6px; margin-top: 4px; border-radius: 3px; border-left: 3px solid #007bff; }
         .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
         .ui-s-btn { color:white; background:#007bff; border:none; padding: 4px; border-radius: 2px; cursor: pointer; font-size: 8px; flex: 1; text-align: center; }
         .ui-s-btn.dup { background: #6f42c1; }
@@ -63,7 +63,7 @@
 </div>
 <div id="model-list"><strong>USER ITEMS</strong><div id="items-container"></div></div>
 <div id="pro-editor">
-    <strong style="color:#ffaa00">PRO TOOLS</strong>
+    <strong style="color:#007bff">PRO TOOLS</strong>
     <input type="file" id="file-input" accept=".glb,.gltf,.jpg,.png,.jpeg,.webp">
     <div id="dynamic-controls"></div>
     <button style="background:#28a745; color:white; border:none; padding:6px; margin-top:5px; font-size:10px; cursor:pointer;" onclick="window.editingIndex = -1">DONE / LOCK</button>
@@ -151,22 +151,20 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = .5;
 
-    renderer.setClearColor(0x000000, 1); 
+    renderer.setClearColor(0x111111, 1); 
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0';
     renderer.domElement.style.zIndex = '2'; 
     document.body.appendChild(renderer.domElement);
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environment = envTexture; 
+    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    // --- LIGHTING ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-    scene.add(ambientLight);
-    
+    // --- LIGHTS ---
+    const ambLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
     dirLight.position.set(0, 300, 0); 
     scene.add(dirLight);
@@ -181,82 +179,10 @@
         return textureCache[url];
     };
 
-    // --- FAIRY LIGHTS SYSTEM ---
-    function createFairyLights() {
-        const totalBulbs = 2500; 
-        const bulbGeo = new THREE.SphereGeometry(1.5, 6, 6); 
-        const bulbMat = new THREE.MeshStandardMaterial({
-            color: 0xffaa00, 
-            emissive: 0xff6600,
-            emissiveIntensity: 30.0,
-            roughness: 0.2,
-            metalness: 0.1,
-            toneMapped: false
-        });
-
-        const instancedMesh = new THREE.InstancedMesh(bulbGeo, bulbMat, totalBulbs);
-        const dummy = new THREE.Object3D();
-        let idx = 0;
-
-        const addCurtain = (sx, ex, sy, sz, ez, count) => {
-            for(let i = 0; i < count; i++) {
-                const r = i/count;
-                const x = THREE.MathUtils.lerp(sx, ex, r);
-                const z = THREE.MathUtils.lerp(sz, ez, r);
-                const len = 180 + Math.random() * 80;
-                const bulbsInStr = 15;
-                for(let j=0; j<bulbsInStr; j++) {
-                    if(idx >= totalBulbs) break;
-                    const y = sy - (j * (len/bulbsInStr));
-                    dummy.position.set(x + (Math.random()-0.5)*5, y, z + (Math.random()-0.5)*5);
-                    dummy.scale.setScalar(1 + Math.random()*0.5);
-                    dummy.updateMatrix();
-                    instancedMesh.setMatrixAt(idx++, dummy.matrix);
-                }
-            }
-        };
-
-        const topY = floorY + T - 5;
-        addCurtain(-580, 580, topY, -580, -580, 25);
-        addCurtain(580, 580, topY, -580, -50, 20);
-        addCurtain(-580, 580, topY, -50, -50, 15);
-
-        const ceilingStrs = 20;
-        for(let k=0; k<ceilingStrs; k++) {
-            const z = THREE.MathUtils.lerp(-550, -50, k/ceilingStrs);
-            const bulbs = 25;
-            for(let b=0; b<bulbs; b++) {
-                if(idx >= totalBulbs) break;
-                const t = b/bulbs; 
-                const x = THREE.MathUtils.lerp(-580, 580, t);
-                const hang = Math.sin(t * Math.PI) * 50; 
-                dummy.position.set(x, topY - hang, z + (Math.random()*10));
-                dummy.scale.setScalar(1.2);
-                dummy.updateMatrix();
-                instancedMesh.setMatrixAt(idx++, dummy.matrix);
-            }
-        }
-
-        instancedMesh.instanceMatrix.needsUpdate = true;
-        scene.add(instancedMesh);
-
-        // INCREASED LIGHTING RANGE TO FILL THE ROOM
-        const pointPositions = [
-            [400, 200, -300], 
-            [-400, 200, -300], 
-            [0, 250, -100]    
-        ];
-        pointPositions.forEach(pos => {
-            const pl = new THREE.PointLight(0xff6600, 0, 1200, 1.8); 
-            pl.position.set(pos[0], pos[1], pos[2]);
-            pl.userData.isFairyLight = true; 
-            scene.add(pl);
-        });
-    }
-
     const glbItems = [
            { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
             { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
+      
         { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
         { src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
         { src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
@@ -273,10 +199,10 @@
         { src: 'teddy.glb', p: [95, 23, -312], r: [0, 0], s: [14, 14, 14] },
         { src: 'muff.glb', p: [55, 14, -251], r: [0, 0], s: [21, 21, 21] },
         { src: 'hamper 2.glb', p: [-76, 22, -242], r: [0, 0], s: [21, 21, 21] },
-        { src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
+{ src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
         { src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
-        { src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
-        { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
+{ src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
+{ src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
          { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
     ];
 
@@ -305,7 +231,16 @@
                     const model = gltf.scene;
                     model.traverse(node => {
                         if (node.isMesh && node.material) {
-                            node.material.envMapIntensity = 1.5;
+                            if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
+                                node.material.metalness = 1.0;
+                                node.material.roughness = 0.05;
+                                node.material.envMapIntensity = 15.0;
+                                if(node.material.color) node.material.color.multiplyScalar(0.8);
+                            } else {
+                                node.material.metalness = 0.0;
+                                node.material.roughness = 0.8;
+                                node.material.envMapIntensity = 1.0;
+                            }
                             node.material.needsUpdate = true;
                         }
                     });
@@ -318,6 +253,7 @@
                         mixers.push(mixer);
                     }
                     scene.add(model);
+                    URL.revokeObjectURL(url);
                 });
             }
         }
@@ -370,12 +306,10 @@
         ];
 
         staticItems.forEach(d => {
-            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshStandardMaterial({ map: getTex(d.src), side: 2, transparent: true }));
+            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
             m.position.set(d.p[0], d.p[1], d.p[2]); m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); m.scale.set(d.s[0], d.s[1], 1);
             scene.add(m);
         });
-
-        createFairyLights();
 
         setTimeout(() => {
             document.getElementById('loader-screen').style.opacity = '0';
@@ -417,7 +351,7 @@
         const spawnPos = new THREE.Vector3(0, 0, -100).applyQuaternion(camera.quaternion).add(camera.position);
         if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
             texLoader.load(url, (tex) => {
-                const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshStandardMaterial({ map: tex, side: 2, transparent: true }));
+                const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: tex, side: 2, transparent: true }));
                 m.position.copy(spawnPos); m.scale.set(60, 60, 1); addUserModel(m, file.name, true);
             });
         } else {
@@ -456,7 +390,7 @@
 
     window.editM = (i) => startEditing(i);
     window.delM = (i) => { 
-        disposeObj(savedModels[i].mesh);
+        disposeObj(savedModels[i].mesh); // FULL GPU CLEAN
         scene.remove(savedModels[i].mesh); 
         cssScene.remove(savedModels[i].label); 
         savedModels.splice(i, 1); window.editingIndex = -1; updateListUI(); 
@@ -508,49 +442,106 @@
     camera.position.set(0, 50, 400);
     const fVec = new THREE.Vector3(), rVec = new THREE.Vector3();
 
+    // --- SURPRISE PARTY LOGIC ---
+    let surpriseTriggered = false;
+    let fadeLight = false;
+    const poppers = [];
+    const balloons = [];
+    const popColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff];
+    
+    // Geometry reuse
+    const confGeo = new THREE.PlaneGeometry(3, 3);
+    const balGeo = new THREE.SphereGeometry(10, 16, 16);
+    
+    function triggerParty() {
+        // 1. INSTANT DARK (Shock)
+        ambLight.intensity = 0.05;
+        dirLight.intensity = 0.05;
+        
+        // 2. SPAWN CONFETTI (Popper Blast)
+        for(let i=0; i<150; i++) {
+            const m = new THREE.Mesh(confGeo, new THREE.MeshBasicMaterial({color: popColors[Math.floor(Math.random()*popColors.length)], side:2}));
+            // Blast from center, left and right
+            m.position.set((Math.random()-0.5)*20, 100, -100); 
+            m.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
+            scene.add(m);
+            poppers.push({
+                mesh: m,
+                vel: new THREE.Vector3((Math.random()-0.5)*25, Math.random()*15 + 10, (Math.random()-0.5)*15),
+                rot: new THREE.Vector3(Math.random()*0.2, Math.random()*0.2, 0)
+            });
+        }
+
+        // 3. SPAWN BALLOONS (Realistic shape float up)
+        for(let i=0; i<30; i++) {
+            const b = new THREE.Mesh(balGeo, new THREE.MeshStandardMaterial({color: popColors[Math.floor(Math.random()*popColors.length)], roughness: 0.2}));
+            b.position.set((Math.random()-0.5)*300, floorY, -100 - Math.random()*300);
+            b.scale.set(1, 1.2, 1); // Realistic oval shape
+            scene.add(b);
+            balloons.push({
+                mesh: b,
+                speed: 1 + Math.random() * 2
+            });
+        }
+
+        // 4. Start Light Fade
+        setTimeout(() => { fadeLight = true; }, 100); // Slight delay for shock
+    }
+
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
         mixers.forEach(m => m.update(delta));
-        
+
+        // --- PARTY UPDATE ---
+        // Trigger condition: Entered TV room (z < -20)
+        if(!surpriseTriggered && camera.position.z < -20 && isDoorOpen) {
+            surpriseTriggered = true;
+            triggerParty();
+        }
+
+        // Light Fade in logic
+        if(fadeLight) {
+            ambLight.intensity += (1.2 - ambLight.intensity) * 0.02;
+            dirLight.intensity += (2.5 - dirLight.intensity) * 0.02;
+        }
+
+        // Physics: Confetti
+        poppers.forEach(p => {
+            if(p.mesh.position.y > floorY + 1) {
+                p.mesh.position.add(p.vel);
+                p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y;
+                p.vel.y -= 0.5; // Gravity
+                p.vel.x *= 0.98; p.vel.z *= 0.98; // Air resistance
+            } else {
+                p.mesh.position.y = floorY + 1; // Stay on ground (waster)
+            }
+        });
+
+        // Physics: Balloons (Go Up)
+        balloons.forEach(b => {
+            if(b.mesh.position.y < 300) {
+                b.mesh.position.y += b.speed;
+                b.mesh.position.x += Math.sin(Date.now()*0.001 + b.speed)*0.2; // Wiggle
+            }
+        });
+        // --------------------
+
         if(!isInteracting && (move.x !== 0 || move.y !== 0)) {
             fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize();
             rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize();
-            velocity.add(fVec.multiplyScalar(-move.y * 1.5)).add(rVec.multiplyScalar(move.x * 1.5));
+            velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5));
         }
         velocity.multiplyScalar(0.9); camera.position.add(velocity);
-        
-        // COLLISION LOGIC RESTORED FROM ORIGINAL
         camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
         if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
-        
         savedModels.forEach(m => m.label.quaternion.copy(camera.quaternion));
         document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
         pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
         iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
         doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
-
-        const isTvRoom = camera.position.z < -20;
-        
-        if (isTvRoom) {
-            scene.environment = null;
-            ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 0.0, 0.05);
-            dirLight.intensity = THREE.MathUtils.lerp(dirLight.intensity, 0.0, 0.05);
-        } else {
-            scene.environment = envTexture;
-            ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 1.2, 0.05);
-            dirLight.intensity = THREE.MathUtils.lerp(dirLight.intensity, 2.5, 0.05);
-        }
-
-        scene.children.forEach(c => {
-            if(c.isPointLight && c.userData.isFairyLight) {
-                const targetPL = isTvRoom ? 2.8 : 0.0;
-                c.intensity += (targetPL - c.intensity) * 0.1;
-            }
-        });
-
         cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
-        document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "PARTY MODE";
+        document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
     }
     boot();
 </script>
