@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sleek Gallery - Pro Ultra V2 Fixed</title>
+    <title>Sleek Gallery - Dark Mode TV Room</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; user-select: none; }
         #loader-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
@@ -153,7 +153,7 @@
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = .5;
 
-    renderer.setClearColor(0x111111, 1); 
+    renderer.setClearColor(0x000000, 1); 
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0';
     renderer.domElement.style.zIndex = '2'; 
@@ -162,7 +162,7 @@
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    // LIGHTING SETUP FOR DYNAMIC ROOMS
+    // --- LIGHTING ---
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
     
@@ -180,60 +180,85 @@
         return textureCache[url];
     };
 
-    // --- FAIRY LIGHTS GENERATION ---
+    // --- FAIRY LIGHTS SYSTEM ---
     function createFairyLights() {
-        const bulbCount = 450; 
-        const stringCount = 22; 
-        // Tiny sphere geometry for realistic LED bulb look (not square)
-        const bulbGeo = new THREE.SphereGeometry(1.5, 6, 6); 
+        const totalBulbs = 1800; // Increased count for 3 walls + ceiling
+        const bulbGeo = new THREE.SphereGeometry(1.3, 6, 6); // Real bulb shape
         const bulbMat = new THREE.MeshStandardMaterial({
             color: 0xffaa33, 
-            emissive: 0xffddaa,
-            emissiveIntensity: 5.0, // High emission for glow
-            roughness: 0.4,
+            emissive: 0xff8800,
+            emissiveIntensity: 10.0, // VERY bright to show in pitch black
+            roughness: 0.2,
             metalness: 0.1
         });
 
-        const instancedMesh = new THREE.InstancedMesh(bulbGeo, bulbMat, bulbCount);
+        const instancedMesh = new THREE.InstancedMesh(bulbGeo, bulbMat, totalBulbs);
         const dummy = new THREE.Object3D();
+        let idx = 0;
 
-        const startX = -600, endX = 600;
-        const startY = floorY + T - 10; // Ceiling height
-        const zPos = -590; // Back wall of TV room
+        // Function to create a curtain of lights
+        const addCurtain = (sx, ex, sy, sz, ez, count) => {
+            for(let i = 0; i < count; i++) {
+                const r = i/count;
+                const x = THREE.MathUtils.lerp(sx, ex, r);
+                const z = THREE.MathUtils.lerp(sz, ez, r);
+                const len = 150 + Math.random() * 100;
+                const bulbsInStr = 15;
+                for(let j=0; j<bulbsInStr; j++) {
+                    if(idx >= totalBulbs) break;
+                    const y = sy - (j * (len/bulbsInStr));
+                    dummy.position.set(
+                        x + (Math.random()-0.5)*5, 
+                        y, 
+                        z + (Math.random()-0.5)*5
+                    );
+                    dummy.scale.setScalar(1 + Math.random()*0.5);
+                    dummy.updateMatrix();
+                    instancedMesh.setMatrixAt(idx++, dummy.matrix);
+                }
+            }
+        };
 
-        let index = 0;
-        for(let i = 0; i < stringCount; i++) {
-            const x = THREE.MathUtils.lerp(startX, endX, i / stringCount);
-            const thisLength = 220 + (Math.random() * 80); // Random drop length
-            const bulbsPerString = Math.floor(bulbCount / stringCount);
+        const topY = floorY + T - 5;
+        // 1. Back Wall (-Z)
+        addCurtain(-580, 580, topY, -580, -580, 25);
+        // 2. Left Wall (-X)
+        addCurtain(-580, -580, topY, -580, -50, 20);
+        // 3. Right Wall (+X)
+        addCurtain(580, 580, topY, -580, -50, 20);
 
-            for(let j = 0; j < bulbsPerString; j++) {
-                const y = startY - (j * (thisLength/bulbsPerString));
-                // Add natural sway/jitter
-                const wobbleX = Math.sin(j * 0.8) * 3;
-                const wobbleZ = Math.cos(j * 0.5) * 3;
-
-                dummy.position.set(x + wobbleX, y, zPos + wobbleZ);
-                dummy.scale.setScalar(1 + Math.random() * 0.6); 
+        // 4. Ceiling Drapes (Zig-Zag across room)
+        const ceilingStrs = 15;
+        for(let k=0; k<ceilingStrs; k++) {
+            const z = THREE.MathUtils.lerp(-550, -50, k/ceilingStrs);
+            const bulbs = 25;
+            for(let b=0; b<bulbs; b++) {
+                if(idx >= totalBulbs) break;
+                // Drape equation (parabola)
+                const t = b/bulbs; // 0 to 1
+                const x = THREE.MathUtils.lerp(-580, 580, t);
+                const hang = Math.sin(t * Math.PI) * 40; // Dip in middle
+                dummy.position.set(x, topY - hang, z + (Math.random()*10));
+                dummy.scale.setScalar(1.2);
                 dummy.updateMatrix();
-                instancedMesh.setMatrixAt(index++, dummy.matrix);
+                instancedMesh.setMatrixAt(idx++, dummy.matrix);
             }
         }
+
         instancedMesh.instanceMatrix.needsUpdate = true;
         scene.add(instancedMesh);
 
-        // Add REAL light sources to reflect on objects (Simulating the glow)
-        // We add a few PointLights instead of one per bulb to save performance
-        const lightColors = [0xffaa00, 0xffccaa, 0xffaa33];
-        for(let k=0; k<6; k++) {
-            const pl = new THREE.PointLight(lightColors[k%3], 80, 500, 1.5);
-            pl.position.set(
-                THREE.MathUtils.lerp(startX + 100, endX - 100, k/5),
-                startY - 120,
-                zPos + 50
-            );
+        // REAL LIGHT EMITTERS (To make objects reflect the gold light)
+        const pointPositions = [
+            [0, 200, -500], [-300, 200, -300], [300, 200, -300],
+            [0, 250, -150], [-500, 150, -100], [500, 150, -100]
+        ];
+        pointPositions.forEach(pos => {
+            const pl = new THREE.PointLight(0xffaa22, 0, 800, 1.5); // Start intensity 0
+            pl.position.set(pos[0], pos[1], pos[2]);
+            pl.userData.isFairyLight = true; // Tag for animation
             scene.add(pl);
-        }
+        });
     }
 
     const glbItems = [
@@ -518,12 +543,24 @@
         iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
         doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
 
-        // --- DYNAMIC LIGHTING LOGIC ---
-        // If camera is in TV room (z < 0), dim lights. If in Spawn room, bright lights.
-        const targetInt = camera.position.z < -20 ? 0.3 : 1.2;
-        const targetDir = camera.position.z < -20 ? 0.2 : 2.5;
-        ambientLight.intensity += (targetInt - ambientLight.intensity) * 0.05;
+        // --- DYNAMIC DARK ROOM LOGIC ---
+        // If Z < -20 (Entered TV Room) -> Lights go to 0.0 (Pitch Black)
+        // If Z > -20 (Entered Spawn Room) -> Lights go to normal
+        const isTvRoom = camera.position.z < -20;
+        const targetAmb = isTvRoom ? 0.0 : 1.2;
+        const targetDir = isTvRoom ? 0.0 : 2.5;
+        
+        // Smooth transition
+        ambientLight.intensity += (targetAmb - ambientLight.intensity) * 0.05;
         dirLight.intensity += (targetDir - dirLight.intensity) * 0.05;
+
+        // Turn the physical PointLights ON only when in dark room to save GPU
+        scene.children.forEach(c => {
+            if(c.isPointLight && c.userData.isFairyLight) {
+                const targetPL = isTvRoom ? 0.8 : 0.0;
+                c.intensity += (targetPL - c.intensity) * 0.1;
+            }
+        });
 
         cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
         document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
