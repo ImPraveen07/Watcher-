@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sleek Gallery - Dark Mode TV Room</title>
+    <title>Sleek Gallery - Party Mode</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; user-select: none; }
         #loader-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
-        .loader-ring { width: 60px; height: 60px; border: 3px solid #222; border-top: 3px solid #007bff; border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; }
+        .loader-ring { width: 60px; height: 60px; border: 3px solid #222; border-top: 3px solid #ffaa00; border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .loader-text { color: #fff; font-size: 10px; margin-top: 20px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
-        #loader-stats { color: #007bff; font-size: 11px; margin-top: 8px; font-family: monospace; }
+        #loader-stats { color: #ffaa00; font-size: 11px; margin-top: 8px; font-family: monospace; }
         .progress-container { width: 180px; height: 2px; background: #222; margin-top: 15px; border-radius: 2px; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: #007bff; transition: width 0.3s; }
+        #progress-bar { width: 0%; height: 100%; background: #ffaa00; transition: width 0.3s; }
         #ui-layer, #pro-editor, #model-list, .action-btn { z-index: 1000; position: absolute; }
         #ui-layer { top: 15px; width: 100%; text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        #room-display { font-size: 10px; color: #fff; background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 4px; letter-spacing: 1px; }
+        #room-display { font-size: 10px; color: #fff; background: rgba(0,0,0,0.7); padding: 4px 12px; border-radius: 4px; letter-spacing: 1px; border: 1px solid #333; }
         #copy-btn { pointer-events: auto; background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 11px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         #pro-editor { left: 8px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.85); color: white; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; gap: 2px; pointer-events: auto; font-size: 9px; width: 175px; max-height: 85vh; overflow-y: auto; border: 1px solid #444; }
         .ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
         .val-grp { display: flex; align-items: center; gap: 2px; }
-        .num-in { width: 40px; background: #111; border: 1px solid #444; color: #007bff; text-align: center; font-size: 9px; padding: 2px 0; }
+        .num-in { width: 40px; background: #111; border: 1px solid #444; color: #ffaa00; text-align: center; font-size: 9px; padding: 2px 0; }
         .step-b { background: #444; color: #fff; border: none; width: 20px; height: 20px; cursor: pointer; font-weight: bold; }
-        #pro-editor input[type="range"] { width: 100%; margin: 2px 0 6px 0; height: 3px; accent-color: #007bff; }
+        #pro-editor input[type="range"] { width: 100%; margin: 2px 0 6px 0; height: 3px; accent-color: #ffaa00; }
         .snap-row { display: flex; justify-content: space-between; margin-bottom: 4px; gap: 2px; }
         .snap-dot { background: #333; color: #fff; border: 1px solid #555; font-size: 8px; padding: 2px 0; flex: 1; text-align: center; cursor: pointer; }
         #model-list { right: 10px; top: 15px; width: 150px; background: rgba(0,0,0,0.7); color: white; padding: 8px; border-radius: 6px; font-size: 9px; pointer-events: auto; max-height: 40vh; overflow-y: auto; border: 1px solid #444; }
-        .list-item { background: #333; padding: 6px; margin-top: 4px; border-radius: 3px; border-left: 3px solid #007bff; }
+        .list-item { background: #333; padding: 6px; margin-top: 4px; border-radius: 3px; border-left: 3px solid #ffaa00; }
         .row { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
         .ui-s-btn { color:white; background:#007bff; border:none; padding: 4px; border-radius: 2px; cursor: pointer; font-size: 8px; flex: 1; text-align: center; }
         .ui-s-btn.dup { background: #6f42c1; }
@@ -63,7 +63,7 @@
 </div>
 <div id="model-list"><strong>USER ITEMS</strong><div id="items-container"></div></div>
 <div id="pro-editor">
-    <strong style="color:#007bff">PRO TOOLS</strong>
+    <strong style="color:#ffaa00">PRO TOOLS</strong>
     <input type="file" id="file-input" accept=".glb,.gltf,.jpg,.png,.jpeg,.webp">
     <div id="dynamic-controls"></div>
     <button style="background:#28a745; color:white; border:none; padding:6px; margin-top:5px; font-size:10px; cursor:pointer;" onclick="window.editingIndex = -1">DONE / LOCK</button>
@@ -151,7 +151,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = .5;
+    renderer.toneMappingExposure = 1.0; // Dynamic exposure
 
     renderer.setClearColor(0x000000, 1); 
     renderer.domElement.style.position = 'absolute';
@@ -160,7 +160,9 @@
     document.body.appendChild(renderer.domElement);
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    // We store the environment texture to toggle it ON/OFF
+    const envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTexture; 
 
     // --- LIGHTING ---
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
@@ -182,14 +184,15 @@
 
     // --- FAIRY LIGHTS SYSTEM ---
     function createFairyLights() {
-        const totalBulbs = 1800; // Increased count for 3 walls + ceiling
-        const bulbGeo = new THREE.SphereGeometry(1.3, 6, 6); // Real bulb shape
+        const totalBulbs = 2500; 
+        const bulbGeo = new THREE.SphereGeometry(1.5, 6, 6); 
         const bulbMat = new THREE.MeshStandardMaterial({
-            color: 0xffaa33, 
-            emissive: 0xff8800,
-            emissiveIntensity: 10.0, // VERY bright to show in pitch black
+            color: 0xffaa00, 
+            emissive: 0xff6600,
+            emissiveIntensity: 30.0, // ULTRA BRIGHT for Dark Room
             roughness: 0.2,
-            metalness: 0.1
+            metalness: 0.1,
+            toneMapped: false // Keeps color vivid even in dark
         });
 
         const instancedMesh = new THREE.InstancedMesh(bulbGeo, bulbMat, totalBulbs);
@@ -202,7 +205,7 @@
                 const r = i/count;
                 const x = THREE.MathUtils.lerp(sx, ex, r);
                 const z = THREE.MathUtils.lerp(sz, ez, r);
-                const len = 150 + Math.random() * 100;
+                const len = 180 + Math.random() * 80;
                 const bulbsInStr = 15;
                 for(let j=0; j<bulbsInStr; j++) {
                     if(idx >= totalBulbs) break;
@@ -220,24 +223,31 @@
         };
 
         const topY = floorY + T - 5;
+        
+        // --- WALLS PLACEMENT (Avoiding Left Wall TV) ---
+        
         // 1. Back Wall (-Z)
         addCurtain(-580, 580, topY, -580, -580, 25);
-        // 2. Left Wall (-X)
-        addCurtain(-580, -580, topY, -580, -50, 20);
-        // 3. Right Wall (+X)
+        
+        // 2. Right Wall (+X)
         addCurtain(580, 580, topY, -580, -50, 20);
 
+        // 3. Front Wall (Near Entrance/Divider) - To complete the loop
+        addCurtain(-580, 580, topY, -50, -50, 15);
+
+        // NOTE: Intentionally SKIPPING Left Wall (x=-580) so lights don't block TV
+
         // 4. Ceiling Drapes (Zig-Zag across room)
-        const ceilingStrs = 15;
+        const ceilingStrs = 20;
         for(let k=0; k<ceilingStrs; k++) {
             const z = THREE.MathUtils.lerp(-550, -50, k/ceilingStrs);
             const bulbs = 25;
             for(let b=0; b<bulbs; b++) {
                 if(idx >= totalBulbs) break;
-                // Drape equation (parabola)
-                const t = b/bulbs; // 0 to 1
+                // Drape equation
+                const t = b/bulbs; 
                 const x = THREE.MathUtils.lerp(-580, 580, t);
-                const hang = Math.sin(t * Math.PI) * 40; // Dip in middle
+                const hang = Math.sin(t * Math.PI) * 50; 
                 dummy.position.set(x, topY - hang, z + (Math.random()*10));
                 dummy.scale.setScalar(1.2);
                 dummy.updateMatrix();
@@ -248,15 +258,16 @@
         instancedMesh.instanceMatrix.needsUpdate = true;
         scene.add(instancedMesh);
 
-        // REAL LIGHT EMITTERS (To make objects reflect the gold light)
+        // REAL LIGHT EMITTERS (Only near Right and Back walls now)
         const pointPositions = [
-            [0, 200, -500], [-300, 200, -300], [300, 200, -300],
-            [0, 250, -150], [-500, 150, -100], [500, 150, -100]
+            [300, 200, -300], // Right Side
+            [0, 200, -500],   // Back Side
+            [0, 250, -250]    // Center Ceiling
         ];
         pointPositions.forEach(pos => {
-            const pl = new THREE.PointLight(0xffaa22, 0, 800, 1.5); // Start intensity 0
+            const pl = new THREE.PointLight(0xff6600, 0, 900, 2.0); 
             pl.position.set(pos[0], pos[1], pos[2]);
-            pl.userData.isFairyLight = true; // Tag for animation
+            pl.userData.isFairyLight = true; 
             scene.add(pl);
         });
     }
@@ -529,6 +540,7 @@
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
         mixers.forEach(m => m.update(delta));
+        
         if(!isInteracting && (move.x !== 0 || move.y !== 0)) {
             fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize();
             rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize();
@@ -537,33 +549,38 @@
         velocity.multiplyScalar(0.9); camera.position.add(velocity);
         camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
         if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
+        
         savedModels.forEach(m => m.label.quaternion.copy(camera.quaternion));
         document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
         pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
         iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
         doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
 
-        // --- DYNAMIC DARK ROOM LOGIC ---
-        // If Z < -20 (Entered TV Room) -> Lights go to 0.0 (Pitch Black)
-        // If Z > -20 (Entered Spawn Room) -> Lights go to normal
+        // --- PITCH BLACK PARTY MODE LOGIC ---
         const isTvRoom = camera.position.z < -20;
-        const targetAmb = isTvRoom ? 0.0 : 1.2;
-        const targetDir = isTvRoom ? 0.0 : 2.5;
         
-        // Smooth transition
-        ambientLight.intensity += (targetAmb - ambientLight.intensity) * 0.05;
-        dirLight.intensity += (targetDir - dirLight.intensity) * 0.05;
+        if (isTvRoom) {
+            // Entered TV Room: KILL Environment Map (Pitch Black)
+            if (scene.environment !== null) scene.environment = null;
+            ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 0.0, 0.05);
+            dirLight.intensity = THREE.MathUtils.lerp(dirLight.intensity, 0.0, 0.05);
+        } else {
+            // Spawn Room: Restore Environment
+            if (scene.environment !== envTexture) scene.environment = envTexture;
+            ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 1.2, 0.05);
+            dirLight.intensity = THREE.MathUtils.lerp(dirLight.intensity, 2.5, 0.05);
+        }
 
-        // Turn the physical PointLights ON only when in dark room to save GPU
+        // Toggle real point lights based on room
         scene.children.forEach(c => {
             if(c.isPointLight && c.userData.isFairyLight) {
-                const targetPL = isTvRoom ? 0.8 : 0.0;
+                const targetPL = isTvRoom ? 2.5 : 0.0;
                 c.intensity += (targetPL - c.intensity) * 0.1;
             }
         });
 
         cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
-        document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
+        document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "PARTY MODE";
     }
     boot();
 </script>
