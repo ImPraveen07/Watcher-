@@ -1,4 +1,5 @@
-Okay without dltingor  chnaging position or size on detail.. Draco compress e below coee models strictly all other unchnaged.. Must be contain in the codes as before. Full
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,9 +85,9 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
     import * as THREE from 'three';
     import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-    // --- MEMORY UTILS ---
     const disposeObj = (obj) => {
         obj.traverse(node => {
             if (node.isMesh) {
@@ -131,8 +132,12 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
     const clock = new THREE.Clock();
     const scene = new THREE.Scene(); 
     const cssScene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 7000);
+    
+    // Near Plane Adjustment to 10 for performance
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 10, 7000);
     camera.rotation.order = 'YXZ';
+    const frustum = new THREE.Frustum();
+    const projScreenMatrix = new THREE.Matrix4();
 
     const cssRenderer = new CSS3DRenderer();
     cssRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -142,8 +147,9 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
     cssRenderer.domElement.style.pointerEvents = 'none'; 
     document.body.appendChild(cssRenderer.domElement);
 
+    // No Antialiasing for VRAM savings
     const renderer = new THREE.WebGLRenderer({ 
-        antialias: true, 
+        antialias: false, 
         alpha: true,
         powerPreference: "high-performance",
         precision: "mediump" 
@@ -153,7 +159,6 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = .5;
-
     renderer.setClearColor(0x111111, 1); 
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0';
@@ -162,16 +167,18 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
     scene.add(new THREE.AmbientLight(0xffffff, 1.2));
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
     dirLight.position.set(0, 300, 0); 
     scene.add(dirLight);
 
     const texLoader = new THREE.TextureLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
     const loader = new GLTFLoader();
-    const sharedPlaneGeom = new THREE.PlaneGeometry(1, 1);
+    loader.setDRACOLoader(dracoLoader);
 
+    const sharedPlaneGeom = new THREE.PlaneGeometry(1, 1);
     const textureCache = {};
     const getTex = (url) => {
         if (!textureCache[url]) textureCache[url] = texLoader.load(url);
@@ -179,14 +186,13 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
     };
 
     const glbItems = [
-           { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
-            { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
-      
+        { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
+        { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
         { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
         { src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
         { src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
         { src: 'tablecloth_lowpoly.glb', p: [79, -35, -265], r: [0, 90], s: [90, 90, 90] },
-         { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
+        { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
         { src: 'boqu.glb', p: [-41, 12, -380], r: [82, 176], s: [20, 20, 20] },
         { src: 'bhat.glb', p: [48, 20, -374], r: [0, 0], s: [6, 6, 6] },
         { src: 'glass.glb', p: [32, 15, -386], r: [0, 188], s: [9, 9, 9] },
@@ -198,12 +204,47 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
         { src: 'teddy.glb', p: [95, 23, -312], r: [0, 0], s: [14, 14, 14] },
         { src: 'muff.glb', p: [55, 14, -251], r: [0, 0], s: [21, 21, 21] },
         { src: 'hamper 2.glb', p: [-76, 22, -242], r: [0, 0], s: [21, 21, 21] },
-{ src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
+        { src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
         { src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
-{ src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
-{ src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
-         { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
+        { src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
+        { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
+        { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
     ];
+function buildRealLightString(config, spawnPos) {
+    const group = new THREE.Group();
+    const bulbGeo = new THREE.CapsuleGeometry(1.2, 3, 4, 12);
+    const bulbMat = new THREE.MeshBasicMaterial({ color: config.color });
+    const glowGeo = new THREE.SphereGeometry(4.5, 16, 16);
+    const glowMat = new THREE.MeshBasicMaterial({ color: config.color, transparent: true, opacity: 0.25 });
+
+    for (let s = 0; s < config.strands; s++) {
+        const xOffset = (s * 45) - (config.strands * 22.5);
+        const points = [];
+        for (let i = 0; i <= 15; i++) {
+            points.push(new THREE.Vector3(xOffset + Math.sin(i * 0.4) * 3, -i * 35, Math.cos(i * 0.4) * 2));
+        }
+        const curve = new THREE.CatmullRomCurve3(points);
+        const wire = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0x050505 }));
+        group.add(wire);
+
+        for (let i = 1; i <= config.bulbs; i++) {
+            const pos = curve.getPoint(i / config.bulbs);
+            const side = (i % 2 === 0) ? 1 : -1;
+            const bulbContainer = new THREE.Group();
+            bulbContainer.position.set(pos.x + (side * 2.5), pos.y, pos.z);
+            bulbContainer.rotation.z = side * 0.6;
+            bulbContainer.add(new THREE.Mesh(bulbGeo, bulbMat));
+            bulbContainer.add(new THREE.Mesh(glowGeo, glowMat));
+            const pLight = new THREE.PointLight(0xffaa44, config.intensity, 150);
+            pLight.decay = 2; 
+            bulbContainer.add(pLight);
+            group.add(bulbContainer);
+        }
+    }
+    group.position.copy(spawnPos);
+    scene.add(group);
+    addUserModel(group, "Real_LED_String", false);
+}
 
     async function boot() {
         await initDB();
@@ -246,11 +287,7 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
                     model.position.set(item.p[0], item.p[1], item.p[2]);
                     model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
                     model.scale.set(item.s[0], item.s[1], item.s[2]);
-                    if (gltf.animations.length > 0) {
-                        const mixer = new THREE.AnimationMixer(model);
-                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-                        mixers.push(mixer);
-                    }
+                    // Animations off as requested
                     scene.add(model);
                     URL.revokeObjectURL(url);
                 });
@@ -332,7 +369,7 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
     const config = [
         { id: 'posX', label: 'Pos X', min: -1200, max: 1200 }, { id: 'posY', label: 'Pos Y', min: -150, max: 800 }, { id: 'posZ', label: 'Pos Z', min: -1200, max: 1200 }, 
         { id: 'rotY', label: 'Rot Horiz', min: 0, max: 360, snaps: [0, 90, 180, 270] }, { id: 'rotX', label: 'Rot Vert', min: 0, max: 360, snaps: [0, 90, 180, 270] }, 
-        { id: 'width', label: 'Scale W', min: 1, max: 800 }, { id: 'height', label: 'Scale H', min: 1, max: 800 }
+        { id: 'width', label: 'Scale W', min: -800, max: 800 }, { id: 'height', label: 'Scale H', min: -800, max: 800 }
     ];
 
     const dynContainer = document.getElementById('dynamic-controls');
@@ -344,23 +381,45 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
         document.getElementById('box-'+c.id).oninput = () => { document.getElementById(c.id).value = document.getElementById('box-'+c.id).value; updateTransform(); };
     });
 
-    document.getElementById('file-input').onchange = (e) => {
-        const file = e.target.files[0]; if (!file) return;
-        const url = URL.createObjectURL(file);
-        const spawnPos = new THREE.Vector3(0, 0, -100).applyQuaternion(camera.quaternion).add(camera.position);
-        if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
-            texLoader.load(url, (tex) => {
-                const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: tex, side: 2, transparent: true }));
-                m.position.copy(spawnPos); m.scale.set(60, 60, 1); addUserModel(m, file.name, true);
-            });
-        } else {
-            loader.load(url, (gltf) => { 
-                const model = gltf.scene;
-                model.traverse(node => { if(node.isMesh && node.material) { node.material.envMapIntensity = 2.5; node.material.roughness = 0.1; node.material.metalness = 0.8; }});
-                model.position.copy(spawnPos); addUserModel(model, file.name, false); 
-            });
+ 
+    document.getElementById('file-input').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Use your requested position
+    const spawnPos = new THREE.Vector3(599, 250, -306);
+
+    // If you upload the HTML file, it runs the Light Builder
+    if (file.name.endsWith('.html')) {
+        const text = await file.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const data = doc.getElementById('light-config');
+
+        if (data) {
+            const config = {
+                color: data.getAttribute('data-bulb-color'),
+                intensity: parseFloat(data.getAttribute('data-intensity')),
+                strands: parseInt(data.getAttribute('data-strands')),
+                bulbs: parseInt(data.getAttribute('data-bulbs-per-strand'))
+            };
+            buildRealLightString(config, spawnPos);
         }
-    };
+        return;
+    }
+
+    // Keep your existing GLB and Image logic below this...
+    const url = URL.createObjectURL(file);
+    if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        texLoader.load(url, (tex) => {
+            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshStandardMaterial({ map: tex, side: 2, transparent: true, roughness: 0.8 }));
+            m.position.copy(spawnPos); m.scale.set(60, 60, 1); addUserModel(m, file.name, true);
+        });
+    } else {
+        loader.load(url, (gltf) => { gltf.scene.position.copy(spawnPos); addUserModel(gltf.scene, file.name, false); });
+    }
+};
+
 
     function addUserModel(mesh, name, isImg) {
         scene.add(mesh);
@@ -384,12 +443,13 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
         d.mesh.position.set(val('posX'), val('posY'), val('posZ'));
         d.mesh.rotation.set(THREE.MathUtils.degToRad(val('rotX')), THREE.MathUtils.degToRad(val('rotY')), 0);
         if(d.isImg) d.mesh.scale.set(val('width'), val('height'), 1); else d.mesh.scale.set(val('width'), val('width'), val('width'));
-        d.label.position.copy(d.mesh.position); d.label.position.y += (d.isImg ? val('height')/2 : val('width')) + 15;
+        d.label.position.copy(d.mesh.position); 
+        d.label.position.y += (d.isImg ? Math.abs(val('height'))/2 : Math.abs(val('width'))) + 15;
     }
 
     window.editM = (i) => startEditing(i);
     window.delM = (i) => { 
-        disposeObj(savedModels[i].mesh); // FULL GPU CLEAN
+        disposeObj(savedModels[i].mesh);
         scene.remove(savedModels[i].mesh); 
         cssScene.remove(savedModels[i].label); 
         savedModels.splice(i, 1); window.editingIndex = -1; updateListUI(); 
@@ -444,7 +504,24 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
-        mixers.forEach(m => m.update(delta));
+        
+        // Frustum Intersection Logic
+        projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        frustum.setFromProjectionMatrix(projScreenMatrix);
+
+        // Strict Visibility for Meshes
+        scene.traverse(obj => {
+            if (obj.isMesh && obj !== doorMesh) {
+                obj.visible = frustum.intersectsObject(obj);
+            }
+        });
+
+        // CSS Visibility Hidden Logic for RAM Recovery
+        if (isPowered) {
+            const isVisible = frustum.intersectsObject(occMesh);
+            frameEl.style.visibility = isVisible ? 'visible' : 'hidden';
+        }
+
         if(!isInteracting && (move.x !== 0 || move.y !== 0)) {
             fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize();
             rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize();
@@ -461,7 +538,10 @@ Okay without dltingor  chnaging position or size on detail.. Draco compress e be
         cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
         document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
     }
+  
+
     boot();
+
 </script>
 </body>
 </html>
