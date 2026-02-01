@@ -85,18 +85,6 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-    const disposeObj = (obj) => {
-        obj.traverse(node => {
-            if (node.isMesh) {
-                if (node.geometry) node.geometry.dispose();
-                if (node.material) {
-                    if (Array.isArray(node.material)) node.material.forEach(m => m.dispose());
-                    else node.material.dispose();
-                }
-            }
-        });
-    };
-
     const DB_NAME = "Galley72", STORE_NAME = "moelfs";
     let db = null;
     const initDB = () => new Promise((res) => {
@@ -140,7 +128,7 @@
     cssRenderer.domElement.style.pointerEvents = 'none'; 
     document.body.appendChild(cssRenderer.domElement);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance", precision: "mediump" });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -155,7 +143,6 @@
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    // --- LIGHTS (Start Dim for Transition) ---
     const ambLight = new THREE.AmbientLight(0xffffff, 0.1);
     scene.add(ambLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.1);
@@ -166,7 +153,14 @@
     const loader = new GLTFLoader();
     const sharedPlaneGeom = new THREE.PlaneGeometry(1, 1);
     const textureCache = {};
-    const getTex = (url) => { if (!textureCache[url]) textureCache[url] = texLoader.load(url); return textureCache[url]; };
+    const getTex = (url) => { 
+        if (!textureCache[url]) {
+            textureCache[url] = texLoader.load(url, undefined, undefined, (err) => {
+                console.error("Failed to load image:", url, err);
+            });
+        }
+        return textureCache[url]; 
+    };
 
     const glbItems = [
         { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
@@ -220,8 +214,7 @@
                         if (node.isMesh && node.material) {
                             if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
                                 node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0;
-                                if(node.material.color) node.material.color.multiplyScalar(0.8);
-                            } else { node.material.metalness = 0.0; node.material.roughness = 0.8; node.material.envMapIntensity = 1.0; }
+                            } else { node.material.metalness = 0.0; node.material.roughness = 0.8; }
                             node.material.needsUpdate = true;
                         }
                     });
@@ -263,78 +256,61 @@
             { src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [599, 48, -306], r: [0, 90], s: [622, 582] },
             { src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [599, 48, 319], r: [0, 90], s: [622, 582] },
             { src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [-599, 48, 318], r: [0, 90], s: [622, 582] },
-            { src: 'images - 2026-01-30T184744.639.jpeg', p: [16, 124, 0], r: [90, 0], s: [136, 18] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [447, -43, 10], r: [0, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-448, -43, 10], r: [0, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-598, -43, 391], r: [0, 90], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-598, -43, -398], r: [0, 90], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-448, -43, -10], r: [0, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [447, -43, -10], r: [0, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [598, -43, -398], r: [0, 90], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [598, -43, 407], r: [180, 90], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [211, -43, 597], r: [180, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [211, -43, -596], r: [180, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-589, -43, -596], r: [180, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-589, -43, 597], r: [180, 0], s: [800, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-48, -43, 0], r: [0, 90], s: [18, 16] },
-            { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [48, -43, 0], r: [0, 90], s: [18, 16] },
-            { src: 'images - 2026-01-30T183236.100.jpeg', p: [-237, 298, -398], r: [90, 0], s: [800, 800] },
-            { src: 'images - 2026-01-30T183236.100.jpeg', p: [-237, 298, 366], r: [90, 0], s: [800, 800] },
-            { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, 366], r: [90, 0], s: [800, 800] },
             { src: 'IMG-20260131-WA0003.jpg', p: [-3, 13, -403], r: [90, 360], s: [26, 26, 1] },
-            { src: '1.jpg', p: [573, 68, -577], r: [0, 115], s: [16, 20, 1] },
-{ src: '1.jpg', p: [573, 68, -535], r: [0, 104], s: [16, 20, 1] },
-{ src: '1.jpg', p: [573, 68, -501], r: [0, 74], s: [16, 20, 1] },
-{ src: '1.jpg', p: [556, 49, -569], r: [0, 116], s: [16, 20, 1] },
-{ src: '1.jpg', p: [573, 48, -553], r: [0, 117], s: [16, 20, 1] },
-{ src: '1.jpg', p: [568, 43, -537], r: [0, 114], s: [16, 20, 1] },
-{ src: '1.jpg', p: [561, 68, -559], r: [0, 100], s: [16, 20, 1] },
-{ src: '1.jpg', p: [585, 68, -549], r: [0, 80], s: [16, 20, 1] },
-{ src: '1.jpg', p: [585, -5, -581], r: [0, 104], s: [16, 20, 1] },
-{ src: '1.jpg', p: [585, 8, -591], r: [0, 107], s: [16, 20, 1] },
-{ src: '1.jpg', p: [595, 8, -576], r: [0, 110], s: [16, 20, 1] },
-{ src: '1.jpg', p: [590, 28, -588], r: [0, 126], s: [16, 20, 1] },
-{ src: '1.jpg', p: [579, 28, -569], r: [0, 109], s: [16, 20, 1] },
-{ src: '1.jpg', p: [591, 2, -559], r: [0, 108], s: [16, 20, 1] },
-{ src: '1.jpg', p: [586, 2, -541], r: [0, 116], s: [16, 20, 1] },
-{ src: '1.jpg', p: [573, 68, -627], r: [0, 115], s: [16, 20, 1] },
-{ src: '1.jpg', p: [573, 68, -585], r: [0, 104], s: [16, 20, 1] },
-{ src: '1.jpg', p: [573, 68, -551], r: [0, 74], s: [16, 20, 1] },
-{ src: '1.jpg', p: [556, 49, -619], r: [0, 116], s: [16, 20, 1] },
-{ src: '1.jpg', p: [573, 48, -603], r: [0, 117], s: [16, 20, 1] },
-{ src: '1.jpg', p: [568, 43, -587], r: [0, 114], s: [16, 20, 1] },
-{ src: '1.jpg', p: [561, 68, -609], r: [0, 100], s: [16, 20, 1] },
-{ src: '1.jpg', p: [585, 68, -599], r: [0, 80], s: [16, 20, 1] },
-{ src: '1.jpg', p: [585, -5, -631], r: [0, 104], s: [16, 20, 1] },
-{ src: '1.jpg', p: [585, 8, -641], r: [0, 107], s: [16, 20, 1] },
-{ src: '1.jpg', p: [595, 8, -626], r: [0, 110], s: [16, 20, 1] },
-{ src: '1.jpg', p: [590, 28, -638], r: [0, 126], s: [16, 20, 1] },
-{ src: '1.jpg', p: [579, 28, -619], r: [0, 109], s: [16, 20, 1] },
-{ src: '1.jpg', p: [591, 2, -609], r: [0, 108], s: [16, 20, 1] },
-{ src: '1.jpg', p: [586, 2, -591], r: [0, 116], s: [16, 20, 1] },
-
+            // PHOTO WALL START
+            { src: '1.jpg', p: [573, 68, -577], r: [0, 115], s: [16, 20] },
+            { src: '1.jpg', p: [573, 68, -535], r: [0, 104], s: [16, 20] },
+            { src: '1.jpg', p: [573, 68, -501], r: [0, 74], s: [16, 20] },
+            { src: '1.jpg', p: [556, 49, -569], r: [0, 116], s: [16, 20] },
+            { src: '1.jpg', p: [573, 48, -553], r: [0, 117], s: [16, 20] },
+            { src: '1.jpg', p: [568, 43, -537], r: [0, 114], s: [16, 20] },
+            { src: '1.jpg', p: [561, 68, -559], r: [0, 100], s: [16, 20] },
+            { src: '1.jpg', p: [585, 68, -549], r: [0, 80], s: [16, 20] },
+            { src: '1.jpg', p: [585, -5, -581], r: [0, 104], s: [16, 20] },
+            { src: '1.jpg', p: [585, 8, -591], r: [0, 107], s: [16, 20] },
+            { src: '1.jpg', p: [595, 8, -576], r: [0, 110], s: [16, 20] },
+            { src: '1.jpg', p: [590, 28, -588], r: [0, 126], s: [16, 20] },
+            { src: '1.jpg', p: [579, 28, -569], r: [0, 109], s: [16, 20] },
+            { src: '1.jpg', p: [591, 2, -559], r: [0, 108], s: [16, 20] },
+            { src: '1.jpg', p: [586, 2, -541], r: [0, 116], s: [16, 20] },
+            { src: '1.jpg', p: [573, 68, -627], r: [0, 115], s: [16, 20] },
+            { src: '1.jpg', p: [573, 68, -585], r: [0, 104], s: [16, 20] },
+            { src: '1.jpg', p: [573, 68, -551], r: [0, 74], s: [16, 20] },
+            { src: '1.jpg', p: [556, 49, -619], r: [0, 116], s: [16, 20] },
+            { src: '1.jpg', p: [573, 48, -603], r: [0, 117], s: [16, 20] },
+            { src: '1.jpg', p: [568, 43, -587], r: [0, 114], s: [16, 20] },
+            { src: '1.jpg', p: [561, 68, -609], r: [0, 100], s: [16, 20] },
+            { src: '1.jpg', p: [585, 68, -599], r: [0, 80], s: [16, 20] },
+            { src: '1.jpg', p: [585, -5, -631], r: [0, 104], s: [16, 20] },
+            { src: '1.jpg', p: [585, 8, -641], r: [0, 107], s: [16, 20] },
+            { src: '1.jpg', p: [595, 8, -626], r: [0, 110], s: [16, 20] },
+            { src: '1.jpg', p: [590, 28, -638], r: [0, 126], s: [16, 20] },
+            { src: '1.jpg', p: [579, 28, -619], r: [0, 109], s: [16, 20] },
+            { src: '1.jpg', p: [591, 2, -609], r: [0, 108], s: [16, 20] },
+            { src: '1.jpg', p: [586, 2, -591], r: [0, 116], s: [16, 20] },
             { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [800, 800] }
         ];
 
         staticItems.forEach(d => {
             const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
-            m.position.set(d.p[0], d.p[1], d.p[2]); m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); m.scale.set(d.s[0], d.s[1], 1);
+            m.position.set(d.p[0], d.p[1], d.p[2]); 
+            m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
+            m.scale.set(d.s[0], d.s[1], 1);
             scene.add(m);
         });
 
         setTimeout(() => { document.getElementById('loader-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('loader-screen').style.display = 'none'; animate(); }, 500); }, 1000);
     }
 
-    // --- PRO UI CONTROLS ---
-    document.getElementById('copy-btn').addEventListener('click', () => {
-        if (savedModels.length === 0) { alert("No user models to copy!"); return; }
-        let output = "";
-        savedModels.forEach(item => {
-            const p = item.mesh.position; const r = item.mesh.rotation; const s = item.mesh.scale;
-            output += `{ src: '${item.name}', p: [${Math.round(p.x)}, ${Math.round(p.y)}, ${Math.round(p.z)}], r: [${Math.round(THREE.MathUtils.radToDeg(r.x))}, ${Math.round(THREE.MathUtils.radToDeg(r.y))}], s: [${Math.round(s.x)}, ${Math.round(s.y)}, ${Math.round(s.z)}] },\n`;
+    // PRO UI Logic
+    document.getElementById('copy-btn').onclick = () => {
+        let out = "";
+        savedModels.forEach(i => {
+            const p = i.mesh.position, r = i.mesh.rotation, s = i.mesh.scale;
+            out += `{ src: '${i.name}', p: [${Math.round(p.x)}, ${Math.round(p.y)}, ${Math.round(p.z)}], r: [${Math.round(THREE.MathUtils.radToDeg(r.x))}, ${Math.round(THREE.MathUtils.radToDeg(r.y))}], s: [${Math.round(s.x)}, ${Math.round(s.y)}, ${Math.round(s.z)}] },\n`;
         });
-        navigator.clipboard.writeText(output).then(() => alert("Scene info copied!"));
-    });
+        navigator.clipboard.writeText(out).then(() => alert("Copied!"));
+    };
 
     window.snap = (id, val) => { document.getElementById(id).value = val; document.getElementById('box-'+id).value = val; updateTransform(); };
     window.step = (id, amt) => { let el = document.getElementById(id); el.value = (parseFloat(el.value) + amt).toFixed(1); document.getElementById('box-'+id).value = el.value; updateTransform(); };
@@ -367,7 +343,7 @@
     window.dupM = (i) => { const s = savedModels[i]; const nm = s.mesh.clone(); if(s.isImg) nm.material = s.mesh.material.clone(); addUserModel(nm, s.name + "_copy", s.isImg); };
     function updateListUI() { const c = document.getElementById('items-container'); c.innerHTML = ''; savedModels.forEach((m, i) => { const div = document.createElement('div'); div.className = 'list-item'; div.innerHTML = `<strong>${m.name}</strong><div class="row"><button class="ui-s-btn" onclick="window.editM(${i})">EDIT</button><button class="ui-s-btn dup" onclick="window.dupM(${i})">DUP</button><button class="ui-s-btn del" onclick="window.delM(${i})">DEL</button></div>`; c.appendChild(div); }); }
 
-    // --- ARCHITECTURE ---
+    // Architecture
     const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
     box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); 
     box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); 
@@ -379,7 +355,7 @@
     const cssObj = new CSS3DObject(frameEl); cssObj.position.set(-585, floorY + 150, -300); cssObj.rotation.y = Math.PI/2; cssObj.scale.set(0.15, 0.15, 0.15); cssScene.add(cssObj);
     const occMesh = new THREE.Mesh(new THREE.PlaneGeometry(1280, 720), new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0, blending: THREE.NoBlending })); occMesh.position.copy(cssObj.position); occMesh.rotation.copy(cssObj.rotation); occMesh.scale.copy(cssObj.scale); scene.add(occMesh);
 
-    // --- MOVEMENT ---
+    // Controls
     let joyId = null, lookId = null, lastL = {x:0, y:0}, joySt = {x:0, y:0};
     const zMove = document.getElementById('zone-move'), zLook = document.getElementById('zone-look'), joyS = document.getElementById('joy-stick'), joyC = document.getElementById('joy-container');
     zMove.addEventListener('touchstart', e => { if(isInteracting) return; const t = e.changedTouches[0]; joyId = t.identifier; joySt = {x:t.clientX, y:t.clientY}; joyC.style.display='block'; joyC.style.left=t.clientX+'px'; joyC.style.top=t.clientY+'px'; });
@@ -396,40 +372,23 @@
     camera.position.set(0, 50, 400);
     const fVec = new THREE.Vector3(), rVec = new THREE.Vector3();
 
-    // --- SURPRISE PARTY LOGIC (Updated) ---
-    let surpriseTriggered = false;
-    let fadeLight = false;
-    const poppers = [];
-    const balloons = [];
-    // 7 Griefs Colors: Red, Green, Blue, Yellow, Magenta, Cyan, White
-    const popColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff];
-    
-    const confGeo = new THREE.PlaneGeometry(6, 6); // Larger size
-    const balGeo = new THREE.SphereGeometry(12, 16, 16);
+    // Surprise Party
+    let surpriseTriggered = false, fadeLight = false;
+    const poppers = [], balloons = [], popColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff];
+    const confGeo = new THREE.PlaneGeometry(6, 6), balGeo = new THREE.SphereGeometry(12, 16, 16);
     
     function triggerParty() {
-        fadeLight = true; // Ramp up lights
-        
-        // Blast from TOP (Ceiling Rain)
+        fadeLight = true;
         for(let i=0; i<450; i++) {
             const m = new THREE.Mesh(confGeo, new THREE.MeshBasicMaterial({color: popColors[Math.floor(Math.random()*7)], side:2}));
-            // Spread across the room ceiling
-            const rx = (Math.random()-0.5)*900, rz = -100 - Math.random()*450;
-            m.position.set(rx, 330, rz); 
-            m.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
+            m.position.set((Math.random()-0.5)*900, 330, -100 - Math.random()*450); 
             scene.add(m);
-            poppers.push({
-                mesh: m,
-                vel: new THREE.Vector3((Math.random()-0.5)*2, - (Math.random()*1.5 + 1), (Math.random()-0.5)*2),
-                rot: new THREE.Vector3(Math.random()*0.1, Math.random()*0.1, 0)
-            });
+            poppers.push({ mesh: m, vel: new THREE.Vector3((Math.random()-0.5)*2, - (Math.random()*1.5 + 1), (Math.random()-0.5)*2), rot: new THREE.Vector3(Math.random()*0.1, Math.random()*0.1, 0) });
         }
-
         for(let i=0; i<35; i++) {
             const b = new THREE.Mesh(balGeo, new THREE.MeshStandardMaterial({color: popColors[Math.floor(Math.random()*7)], roughness: 0.1}));
             b.position.set((Math.random()-0.5)*800, floorY, -150 - Math.random()*400);
-            b.scale.set(1, 1.25, 1);
-            scene.add(b);
+            b.scale.set(1, 1.25, 1); scene.add(b);
             balloons.push({ mesh: b, speed: 0.8 + Math.random() * 1.5 });
         }
     }
@@ -438,39 +397,11 @@
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
         mixers.forEach(m => m.update(delta));
-
-        // --- PARTY UPDATE ---
-        if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) {
-            surpriseTriggered = true;
-            triggerParty();
-        }
-
-        if(fadeLight) {
-            ambLight.intensity += (1.4 - ambLight.intensity) * 0.05;
-            dirLight.intensity += (2.5 - dirLight.intensity) * 0.05;
-        }
-
-        poppers.forEach(p => {
-            if(p.mesh.position.y > floorY + 2) {
-                p.mesh.position.add(p.vel);
-                p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y;
-                p.mesh.position.x += Math.sin(Date.now()*0.002 + p.mesh.position.z)*0.4; // Sway
-            } else { p.mesh.position.y = floorY + 2; }
-        });
-
-        balloons.forEach(b => {
-            if(b.mesh.position.y < 320) {
-                b.mesh.position.y += b.speed;
-                b.mesh.position.x += Math.sin(Date.now()*0.001 + b.speed)*0.25;
-            }
-        });
-
-        // --- REGULAR UPDATE ---
-        if(!isInteracting && (move.x !== 0 || move.y !== 0)) {
-            fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize();
-            rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize();
-            velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5));
-        }
+        if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) { surpriseTriggered = true; triggerParty(); }
+        if(fadeLight) { ambLight.intensity += (1.4 - ambLight.intensity) * 0.05; dirLight.intensity += (2.5 - dirLight.intensity) * 0.05; }
+        poppers.forEach(p => { if(p.mesh.position.y > floorY + 2) { p.mesh.position.add(p.vel); p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y; p.mesh.position.x += Math.sin(Date.now()*0.002 + p.mesh.position.z)*0.4; } else { p.mesh.position.y = floorY + 2; } });
+        balloons.forEach(b => { if(b.mesh.position.y < 320) { b.mesh.position.y += b.speed; b.mesh.position.x += Math.sin(Date.now()*0.001 + b.speed)*0.25; } });
+        if(!isInteracting && (move.x !== 0 || move.y !== 0)) { fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize(); rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize(); velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5)); }
         velocity.multiplyScalar(0.9); camera.position.add(velocity);
         camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
         if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
