@@ -141,11 +141,18 @@
     cssRenderer.domElement.style.pointerEvents = 'none'; 
     document.body.appendChild(cssRenderer.domElement);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true,
+        powerPreference: "high-performance",
+        precision: "mediump" 
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+
     renderer.setClearColor(0x000000, 1); 
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0';
@@ -159,6 +166,7 @@
     // --- LIGHTING ---
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
+    
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
     dirLight.position.set(0, 300, 0); 
     scene.add(dirLight);
@@ -173,54 +181,87 @@
         return textureCache[url];
     };
 
+    // --- FAIRY LIGHTS SYSTEM ---
     function createFairyLights() {
         const totalBulbs = 2500; 
         const bulbGeo = new THREE.SphereGeometry(1.5, 6, 6); 
         const bulbMat = new THREE.MeshStandardMaterial({
-            color: 0xffaa00, emissive: 0xff6600, emissiveIntensity: 30.0, toneMapped: false 
+            color: 0xffaa00, 
+            emissive: 0xff6600,
+            emissiveIntensity: 30.0,
+            roughness: 0.2,
+            metalness: 0.1,
+            toneMapped: false
         });
+
         const instancedMesh = new THREE.InstancedMesh(bulbGeo, bulbMat, totalBulbs);
         const dummy = new THREE.Object3D();
         let idx = 0;
+
         const addCurtain = (sx, ex, sy, sz, ez, count) => {
             for(let i = 0; i < count; i++) {
                 const r = i/count;
                 const x = THREE.MathUtils.lerp(sx, ex, r);
                 const z = THREE.MathUtils.lerp(sz, ez, r);
+                const len = 180 + Math.random() * 80;
                 const bulbsInStr = 15;
                 for(let j=0; j<bulbsInStr; j++) {
                     if(idx >= totalBulbs) break;
-                    dummy.position.set(x + (Math.random()-0.5)*5, sy - (j * 15), z + (Math.random()-0.5)*5);
+                    const y = sy - (j * (len/bulbsInStr));
+                    dummy.position.set(x + (Math.random()-0.5)*5, y, z + (Math.random()-0.5)*5);
+                    dummy.scale.setScalar(1 + Math.random()*0.5);
                     dummy.updateMatrix();
                     instancedMesh.setMatrixAt(idx++, dummy.matrix);
                 }
             }
         };
+
         const topY = floorY + T - 5;
-        addCurtain(-580, 580, topY, -580, -580, 25); // Back
-        addCurtain(580, 580, topY, -580, -50, 20);  // Right
-        addCurtain(-580, 580, topY, -50, -50, 15);   // Front
+        addCurtain(-580, 580, topY, -580, -580, 25);
+        addCurtain(580, 580, topY, -580, -50, 20);
+        addCurtain(-580, 580, topY, -50, -50, 15);
+
+        const ceilingStrs = 20;
+        for(let k=0; k<ceilingStrs; k++) {
+            const z = THREE.MathUtils.lerp(-550, -50, k/ceilingStrs);
+            const bulbs = 25;
+            for(let b=0; b<bulbs; b++) {
+                if(idx >= totalBulbs) break;
+                const t = b/bulbs; 
+                const x = THREE.MathUtils.lerp(-580, 580, t);
+                const hang = Math.sin(t * Math.PI) * 50; 
+                dummy.position.set(x, topY - hang, z + (Math.random()*10));
+                dummy.scale.setScalar(1.2);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(idx++, dummy.matrix);
+            }
+        }
+
         instancedMesh.instanceMatrix.needsUpdate = true;
         scene.add(instancedMesh);
 
-        // --- NEW REAL LIGHTS TO ILLUMINATE PICS/MODELS ---
-        const pointPositions = [[400, 150, -300], [-400, 150, -300], [0, 200, -500]];
+        // INCREASED LIGHTING RANGE TO FILL THE ROOM
+        const pointPositions = [
+            [400, 200, -300], 
+            [-400, 200, -300], 
+            [0, 250, -100]    
+        ];
         pointPositions.forEach(pos => {
-            const pl = new THREE.PointLight(0xffaa00, 0, 800, 1.5);
+            const pl = new THREE.PointLight(0xff6600, 0, 1200, 1.8); 
             pl.position.set(pos[0], pos[1], pos[2]);
-            pl.userData.isFairyLight = true;
+            pl.userData.isFairyLight = true; 
             scene.add(pl);
         });
     }
 
     const glbItems = [
-        { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
-        { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
+           { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
+            { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
         { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
         { src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
         { src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
         { src: 'tablecloth_lowpoly.glb', p: [79, -35, -265], r: [0, 90], s: [90, 90, 90] },
-        { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
+         { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
         { src: 'boqu.glb', p: [-41, 12, -380], r: [82, 176], s: [20, 20, 20] },
         { src: 'bhat.glb', p: [48, 20, -374], r: [0, 0], s: [6, 6, 6] },
         { src: 'glass.glb', p: [32, 15, -386], r: [0, 188], s: [9, 9, 9] },
@@ -236,18 +277,20 @@
         { src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
         { src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
         { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
-        { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
+         { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
     ];
 
     async function boot() {
         await initDB();
         const statsText = document.getElementById('loader-stats');
         const progressBar = document.getElementById('progress-bar');
+        const msgText = document.getElementById('loader-msg');
         let loadedCount = 0, totalMB = 0;
 
         for (let item of glbItems) {
             let blob = await getCached(item.src);
             if (!blob) {
+                msgText.innerText = `Fetching: ${item.src}`;
                 const res = await fetch(item.src);
                 blob = await res.blob();
                 await saveCached(item.src, blob);
@@ -260,9 +303,14 @@
                 const url = URL.createObjectURL(blob);
                 loader.load(url, (gltf) => {
                     const model = gltf.scene;
-                    model.traverse(node => { if (node.isMesh && node.material) { node.material.envMapIntensity = 1.0; node.material.needsUpdate = true; }});
+                    model.traverse(node => {
+                        if (node.isMesh && node.material) {
+                            node.material.envMapIntensity = 1.5;
+                            node.material.needsUpdate = true;
+                        }
+                    });
                     model.position.set(item.p[0], item.p[1], item.p[2]);
-                    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]||0), THREE.MathUtils.degToRad(item.r[1]||0), 0);
+                    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
                     model.scale.set(item.s[0], item.s[1], item.s[2]);
                     if (gltf.animations.length > 0) {
                         const mixer = new THREE.AnimationMixer(model);
@@ -322,83 +370,187 @@
         ];
 
         staticItems.forEach(d => {
-            // CHANGED: Use StandardMaterial so it reacts to fairy lights (slightly visible)
-            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshStandardMaterial({ map: getTex(d.src), side: 2, transparent: true, roughness: 0.8 }));
+            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshStandardMaterial({ map: getTex(d.src), side: 2, transparent: true }));
             m.position.set(d.p[0], d.p[1], d.p[2]); m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); m.scale.set(d.s[0], d.s[1], 1);
             scene.add(m);
         });
 
         createFairyLights();
-        setTimeout(() => { document.getElementById('loader-screen').style.display = 'none'; animate(); }, 1500);
+
+        setTimeout(() => {
+            document.getElementById('loader-screen').style.opacity = '0';
+            setTimeout(() => { document.getElementById('loader-screen').style.display = 'none'; animate(); }, 500);
+        }, 1000);
     }
 
-    // --- ALL UI & CONTROL LOGIC REMAINS UNTOUCHED ---
-    document.getElementById('copy-btn').onclick = () => { /* Original Logic */ };
+    document.getElementById('copy-btn').addEventListener('click', () => {
+        if (savedModels.length === 0) { alert("No user models to copy!"); return; }
+        let output = "";
+        savedModels.forEach(item => {
+            const p = item.mesh.position; const r = item.mesh.rotation; const s = item.mesh.scale;
+            output += `{ src: '${item.name}', p: [${Math.round(p.x)}, ${Math.round(p.y)}, ${Math.round(p.z)}], r: [${Math.round(THREE.MathUtils.radToDeg(r.x))}, ${Math.round(THREE.MathUtils.radToDeg(r.y))}], s: [${Math.round(s.x)}, ${Math.round(s.y)}, ${Math.round(s.z)}] },\n`;
+        });
+        navigator.clipboard.writeText(output).then(() => alert("Scene info copied!"));
+    });
+
     window.snap = (id, val) => { document.getElementById(id).value = val; document.getElementById('box-'+id).value = val; updateTransform(); };
     window.step = (id, amt) => { let el = document.getElementById(id); el.value = (parseFloat(el.value) + amt).toFixed(1); document.getElementById('box-'+id).value = el.value; updateTransform(); };
-    
-    // ... config array and control generation ...
-    const config = [ { id: 'posX', label: 'Pos X', min: -1200, max: 1200 }, { id: 'posY', label: 'Pos Y', min: -150, max: 800 }, { id: 'posZ', label: 'Pos Z', min: -1200, max: 1200 }, { id: 'rotY', label: 'Rot Horiz', min: 0, max: 360, snaps: [0, 90, 180, 270] }, { id: 'rotX', label: 'Rot Vert', min: 0, max: 360, snaps: [0, 90, 180, 270] }, { id: 'width', label: 'Scale W', min: 1, max: 800 }, { id: 'height', label: 'Scale H', min: 1, max: 800 } ];
+
+    const config = [
+        { id: 'posX', label: 'Pos X', min: -1200, max: 1200 }, { id: 'posY', label: 'Pos Y', min: -150, max: 800 }, { id: 'posZ', label: 'Pos Z', min: -1200, max: 1200 }, 
+        { id: 'rotY', label: 'Rot Horiz', min: 0, max: 360, snaps: [0, 90, 180, 270] }, { id: 'rotX', label: 'Rot Vert', min: 0, max: 360, snaps: [0, 90, 180, 270] }, 
+        { id: 'width', label: 'Scale W', min: 1, max: 800 }, { id: 'height', label: 'Scale H', min: 1, max: 800 }
+    ];
+
     const dynContainer = document.getElementById('dynamic-controls');
     config.forEach(c => {
         const div = document.createElement('div');
         div.innerHTML = `<div class="ctrl-row"><label>${c.label}</label><div class="val-grp"><button class="step-b" onclick="window.step('${c.id}', -5)">-</button><input type="number" id="box-${c.id}" class="num-in" value="0" step="1"><button class="step-b" onclick="window.step('${c.id}', 5)">+</button></div></div><input type="range" id="${c.id}" min="${c.min}" max="${c.max}" value="0" step="1">${c.snaps ? `<div class="snap-row">${c.snaps.map(s => `<div class="snap-dot" onclick="window.snap('${c.id}', ${s})">${s}°</div>`).join('')}</div>` : ''}`;
         dynContainer.appendChild(div);
         document.getElementById(c.id).oninput = () => { document.getElementById('box-'+c.id).value = document.getElementById(c.id).value; updateTransform(); };
+        document.getElementById('box-'+c.id).oninput = () => { document.getElementById(c.id).value = document.getElementById('box-'+c.id).value; updateTransform(); };
     });
 
-    document.getElementById('file-input').onchange = (e) => { /* Original Logic */ };
-    function addUserModel(mesh, name, isImg) { scene.add(mesh); const el = document.createElement('div'); el.className = 'model-label'; el.innerHTML = name.substring(0, 12); const lbl = new CSS3DObject(el); lbl.position.copy(mesh.position); cssScene.add(lbl); savedModels.push({ mesh, label: lbl, name, isImg }); updateListUI(); }
-    function startEditing(i) { window.editingIndex = i; /* Original Sync */ }
-    function updateTransform() { if (window.editingIndex === -1) return; const d = savedModels[window.editingIndex], val = (id) => parseFloat(document.getElementById(id).value); d.mesh.position.set(val('posX'), val('posY'), val('posZ')); d.mesh.rotation.set(THREE.MathUtils.degToRad(val('rotX')), THREE.MathUtils.degToRad(val('rotY')), 0); if(d.isImg) d.mesh.scale.set(val('width'), val('height'), 1); else d.mesh.scale.set(val('width'), val('width'), val('width')); d.label.position.copy(d.mesh.position); d.label.position.y += (d.isImg ? val('height')/2 : val('width')) + 15; }
-    function updateListUI() { /* Original Logic */ }
+    document.getElementById('file-input').onchange = (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const url = URL.createObjectURL(file);
+        const spawnPos = new THREE.Vector3(0, 0, -100).applyQuaternion(camera.quaternion).add(camera.position);
+        if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            texLoader.load(url, (tex) => {
+                const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshStandardMaterial({ map: tex, side: 2, transparent: true }));
+                m.position.copy(spawnPos); m.scale.set(60, 60, 1); addUserModel(m, file.name, true);
+            });
+        } else {
+            loader.load(url, (gltf) => { 
+                const model = gltf.scene;
+                model.traverse(node => { if(node.isMesh && node.material) { node.material.envMapIntensity = 2.5; node.material.roughness = 0.1; node.material.metalness = 0.8; }});
+                model.position.copy(spawnPos); addUserModel(model, file.name, false); 
+            });
+        }
+    };
 
-    const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
-    box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333"); box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333"); box(100, T-180, 15, 0, floorY+260, 0, "#333"); const doorMesh = box(100, 180, 8, 0, floorY + 90, 0, "#111");
+    function addUserModel(mesh, name, isImg) {
+        scene.add(mesh);
+        const el = document.createElement('div'); el.className = 'model-label'; el.innerHTML = name.substring(0, 12);
+        const lbl = new CSS3DObject(el); lbl.position.copy(mesh.position); cssScene.add(lbl);
+        savedModels.push({ mesh, label: lbl, name, isImg });
+        updateListUI(); startEditing(savedModels.length - 1);
+    }
+
+    function startEditing(i) {
+        window.editingIndex = i; const m = savedModels[i].mesh;
+        const sync = (id, val) => { document.getElementById(id).value = Math.round(val); document.getElementById('box-'+id).value = Math.round(val); };
+        sync('posX', m.position.x); sync('posY', m.position.y); sync('posZ', m.position.z);
+        sync('width', m.scale.x); sync('height', m.scale.y);
+        sync('rotX', THREE.MathUtils.radToDeg(m.rotation.x)); sync('rotY', THREE.MathUtils.radToDeg(m.rotation.y));
+    }
+
+    function updateTransform() {
+        if (window.editingIndex === -1) return;
+        const d = savedModels[window.editingIndex], val = (id) => parseFloat(document.getElementById(id).value);
+        d.mesh.position.set(val('posX'), val('posY'), val('posZ'));
+        d.mesh.rotation.set(THREE.MathUtils.degToRad(val('rotX')), THREE.MathUtils.degToRad(val('rotY')), 0);
+        if(d.isImg) d.mesh.scale.set(val('width'), val('height'), 1); else d.mesh.scale.set(val('width'), val('width'), val('width'));
+        d.label.position.copy(d.mesh.position); d.label.position.y += (d.isImg ? val('height')/2 : val('width')) + 15;
+    }
+
+    window.editM = (i) => startEditing(i);
+    window.delM = (i) => { 
+        disposeObj(savedModels[i].mesh);
+        scene.remove(savedModels[i].mesh); 
+        cssScene.remove(savedModels[i].label); 
+        savedModels.splice(i, 1); window.editingIndex = -1; updateListUI(); 
+    };
+    window.dupM = (i) => { 
+        const s = savedModels[i]; 
+        const nm = s.mesh.clone(); 
+        if(s.isImg) nm.material = s.mesh.material.clone(); 
+        addUserModel(nm, s.name + "_copy", s.isImg); 
+    };
+
+    function updateListUI() {
+        const c = document.getElementById('items-container'); c.innerHTML = '';
+        savedModels.forEach((m, i) => {
+            const div = document.createElement('div'); div.className = 'list-item';
+            div.innerHTML = `<strong>${m.name}</strong><div class="row"><button class="ui-s-btn" onclick="window.editM(${i})">EDIT</button><button class="ui-s-btn dup" onclick="window.dupM(${i})">DUP</button><button class="ui-s-btn del" onclick="window.delM(${i})">DEL</button></div>`;
+            c.appendChild(div);
+        });
+    }
+
+    const box = (w, h, d, x, y, z, color) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1}));
+        m.position.set(x,y,z); scene.add(m); return m;
+    };
+    box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); 
+    box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); 
+    box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333"); 
+    box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333"); 
+    box(100, T-180, 15, 0, floorY+260, 0, "#333"); const doorMesh = box(100, 180, 8, 0, floorY + 90, 0, "#111");
 
     const frameEl = document.getElementById('html-frame-element');
     const cssObj = new CSS3DObject(frameEl); cssObj.position.set(-585, floorY + 150, -300); cssObj.rotation.y = Math.PI/2; cssObj.scale.set(0.15, 0.15, 0.15); cssScene.add(cssObj);
+    const occMesh = new THREE.Mesh(new THREE.PlaneGeometry(1280, 720), new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0, blending: THREE.NoBlending }));
+    occMesh.position.copy(cssObj.position); occMesh.rotation.copy(cssObj.rotation); occMesh.scale.copy(cssObj.scale); scene.add(occMesh);
 
     let joyId = null, lookId = null, lastL = {x:0, y:0}, joySt = {x:0, y:0};
     const zMove = document.getElementById('zone-move'), zLook = document.getElementById('zone-look'), joyS = document.getElementById('joy-stick'), joyC = document.getElementById('joy-container');
-    zMove.addEventListener('touchstart', e => { const t = e.changedTouches[0]; joyId = t.identifier; joySt = {x:t.clientX, y:t.clientY}; joyC.style.display='block'; joyC.style.left=t.clientX+'px'; joyC.style.top=t.clientY+'px'; });
-    zMove.addEventListener('touchmove', e => { for(let t of e.changedTouches) if(t.identifier === joyId) { let dx = t.clientX-joySt.x, dy = t.clientY-joySt.y; const d = Math.min(Math.sqrt(dx*dx+dy*dy), 35); const a = Math.atan2(dy, dx); move = {x: Math.cos(a)*d/35, y: Math.sin(a)*d/35}; } });
+    zMove.addEventListener('touchstart', e => { if(isInteracting) return; const t = e.changedTouches[0]; joyId = t.identifier; joySt = {x:t.clientX, y:t.clientY}; joyC.style.display='block'; joyC.style.left=t.clientX+'px'; joyC.style.top=t.clientY+'px'; });
+    zMove.addEventListener('touchmove', e => { if(isInteracting) return; for(let t of e.changedTouches) if(t.identifier === joyId) { let dx = t.clientX-joySt.x, dy = t.clientY-joySt.y; const d = Math.min(Math.sqrt(dx*dx+dy*dy), 35); const a = Math.atan2(dy, dx); joyS.style.transform = `translate(calc(-50% + ${Math.cos(a)*d}px), calc(-50% + ${Math.sin(a)*d}px))`; move = {x: Math.cos(a)*d/35, y: Math.sin(a)*d/35}; } });
     zMove.addEventListener('touchend', () => { joyId=null; move={x:0,y:0}; joyC.style.display='none'; });
-    zLook.addEventListener('touchstart', e => { lookId = e.changedTouches[0].identifier; lastL = {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY}; });
-    zLook.addEventListener('touchmove', e => { for(let t of e.changedTouches) if(t.identifier === lookId) { camera.rotation.y -= (t.clientX - lastL.x) * 0.0035; camera.rotation.x -= (t.clientY - lastL.y) * 0.0035; lastL = {x:t.clientX, y:t.clientY}; } });
+    zLook.addEventListener('touchstart', e => { if(isInteracting) return; lookId = e.changedTouches[0].identifier; lastL = {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY}; });
+    zLook.addEventListener('touchmove', e => { if(isInteracting) return; for(let t of e.changedTouches) if(t.identifier === lookId) { camera.rotation.y -= (t.clientX - lastL.x) * 0.0035; camera.rotation.x -= (t.clientY - lastL.y) * 0.0035; camera.rotation.x = Math.max(-1.4, Math.min(1.4, camera.rotation.x)); lastL = {x:t.clientX, y:t.clientY}; } });
 
+    const iBtn = document.getElementById('interact-btn'), pBtn = document.getElementById('power-btn');
     document.getElementById('door-btn').onclick = () => isDoorOpen = !isDoorOpen;
-    document.getElementById('power-btn').onclick = () => { isPowered = !isPowered; document.getElementById('totify-iframe').src = isPowered ? "https://impraveen07.github.io/Win7/" : ""; frameEl.style.display = isPowered ? 'block' : 'none'; };
+    pBtn.onclick = () => { isPowered = !isPowered; document.getElementById('totify-iframe').src = isPowered ? "https://impraveen07.github.io/Win7/" : ""; frameEl.style.display = isPowered ? 'block' : 'none'; pBtn.innerText = isPowered ? "🔌 POWER OFF" : "🔌 POWER ON"; pBtn.style.background = isPowered ? "#dc3545" : "#222"; };
+    iBtn.onclick = () => { isInteracting = !isInteracting; if(isInteracting) { cssRenderer.domElement.style.zIndex='999'; cssRenderer.domElement.style.pointerEvents='auto'; renderer.domElement.style.zIndex='1'; zMove.style.pointerEvents='none'; zLook.style.pointerEvents='none'; document.getElementById('touch-blocker').style.display='none'; iBtn.innerText="🔒 EXIT INTERACT"; iBtn.style.background="#dc3545"; } else { renderer.domElement.style.zIndex='2'; cssRenderer.domElement.style.zIndex='1'; cssRenderer.domElement.style.pointerEvents='none'; zMove.style.pointerEvents='auto'; zLook.style.pointerEvents='auto'; document.getElementById('touch-blocker').style.display='block'; iBtn.innerText="🎯 INTERACT"; iBtn.style.background="#007bff"; move={x:0,y:0}; } };
 
     camera.position.set(0, 50, 400);
+    const fVec = new THREE.Vector3(), rVec = new THREE.Vector3();
 
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
         mixers.forEach(m => m.update(delta));
         
-        const fVec = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize();
-        const rVec = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize();
-        velocity.add(fVec.multiplyScalar(-move.y * 1.5)).add(rVec.multiplyScalar(move.x * 1.5));
+        if(!isInteracting && (move.x !== 0 || move.y !== 0)) {
+            fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize();
+            rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize();
+            velocity.add(fVec.multiplyScalar(-move.y * 1.5)).add(rVec.multiplyScalar(move.x * 1.5));
+        }
         velocity.multiplyScalar(0.9); camera.position.add(velocity);
+        
+        // COLLISION LOGIC RESTORED FROM ORIGINAL
+        camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
+        if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
+        
+        savedModels.forEach(m => m.label.quaternion.copy(camera.quaternion));
+        document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
+        pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
+        iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
+        doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
 
-        // --- DARK ROOM & VISIBILITY LOGIC ---
         const isTvRoom = camera.position.z < -20;
         
-        // Kill sun and environment reflection when in TV Room
-        ambientLight.intensity = isTvRoom ? 0.05 : 1.2;
-        dirLight.intensity = isTvRoom ? 0.0 : 2.5;
-        scene.environment = isTvRoom ? null : envTexture;
+        if (isTvRoom) {
+            scene.environment = null;
+            ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 0.0, 0.05);
+            dirLight.intensity = THREE.MathUtils.lerp(dirLight.intensity, 0.0, 0.05);
+        } else {
+            scene.environment = envTexture;
+            ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, 1.2, 0.05);
+            dirLight.intensity = THREE.MathUtils.lerp(dirLight.intensity, 2.5, 0.05);
+        }
 
-        // Turn on real fairy point lights to make pics slightly visible
         scene.children.forEach(c => {
-            if(c.userData.isFairyLight) {
-                c.intensity += ((isTvRoom ? 3.0 : 0.0) - c.intensity) * 0.1;
+            if(c.isPointLight && c.userData.isFairyLight) {
+                const targetPL = isTvRoom ? 2.8 : 0.0;
+                c.intensity += (targetPL - c.intensity) * 0.1;
             }
         });
 
-        doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
         cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
+        document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "PARTY MODE";
     }
     boot();
 </script>
