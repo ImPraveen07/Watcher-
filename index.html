@@ -213,9 +213,17 @@ const glbItems = [
             scene.add(m);
         });
 
-        setTimeout(() => { document.getElementById('loader-screen').style.opacity = '0'; setTimeout(() => { document.getElementById
-             
-            conststaticItems = [
+
+                setTimeout(() => { 
+            document.getElementById('loader-screen').style.opacity = '0'; 
+            setTimeout(() => { 
+                document.getElementById('loader-screen').style.display = 'none'; 
+                animate(); 
+            }, 500); 
+        }, 1500);
+    } // <--- This closing bracket ends the boot function
+
+            const staticItems = [
         // --- LARGE STRUCTURES & WALLS ---
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -545], r: [270, 0], s: [368, 368] },
