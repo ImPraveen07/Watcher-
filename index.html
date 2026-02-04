@@ -218,7 +218,8 @@ const glbItems = [
 
     const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
     box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, const staticItems = [
-    // --- LARGE STRUCTURES & WALLS ---
+  const staticItems = [
+        // --- LARGE STRUCTURES & WALLS ---
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -545], r: [270, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, -545], r: [270, 180], s: [368, 368] },
