@@ -162,14 +162,14 @@ const glbItems = [
         { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
         { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
     ];
-
-    async function boot() {
+        async function boot() {
         await initDB();
         const statsText = document.getElementById('loader-stats');
         const progressBar = document.getElementById('progress-bar');
         const msgText = document.getElementById('loader-msg');
         let loadedCount = 0, totalMB = 0;
 
+        // 1. Load GLB Models
         for (let item of glbItems) {
             let blob = await getCached(item.src);
             if (!blob) {
@@ -204,27 +204,28 @@ const glbItems = [
                 });
             }
         }
-        
-        
 
+        // 2. Load Static Image Planes
         staticItems.forEach(d => {
             const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
-            m.position.set(d.p[0], d.p[1], d.p[2]); m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); m.scale.set(d.s[0], d.s[1], 1);
+            m.position.set(d.p[0], d.p[1], d.p[2]); 
+            m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
+            m.scale.set(d.s[0], d.s[1], 1);
             scene.add(m);
         });
 
-
-                setTimeout(() => { 
+        // 3. Hide Loader
+        setTimeout(() => { 
             document.getElementById('loader-screen').style.opacity = '0'; 
             setTimeout(() => { 
                 document.getElementById('loader-screen').style.display = 'none'; 
                 animate(); 
             }, 500); 
         }, 1500);
-    } // <--- This closing bracket ends the boot function
+    } // End of boot function
 
-            const staticItems = [
-        // --- LARGE STRUCTURES & WALLS ---
+    const staticItems = [
+               // --- LARGE STRUCTURES & WALLS ---
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -545], r: [270, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, -545], r: [270, 180], s: [368, 368] },
@@ -435,8 +436,7 @@ const glbItems = [
     // --- MISCELLANEOUS ---
     { src: 'IMG-20260131-WA0003.jpg', p: [-3, 13, -403], r: [90, 360], s: [26, 26, 1] },
     { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [16, 20, 1] }
-];('loader-screen').style.display = 'none'; animate(); }, 500); }, 1500);
-    }
+];
 
     const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
     box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); 
