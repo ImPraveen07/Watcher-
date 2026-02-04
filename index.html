@@ -64,7 +64,7 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-    const DB_NAME = "Gnaly72", STORE_NAME = "dfs";
+    const DB_NAME = "Gnnaly72", STORE_NAME = "mdfs";
     let db = null;
     const initDB = () => new Promise((res) => {
         const req = indexedDB.open(DB_NAME, 2);
@@ -213,12 +213,8 @@ const glbItems = [
             scene.add(m);
         });
 
-        setTimeout(() => { document.getElementById('loader-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('loader-screen').style.display = 'none'; animate(); }, 500); }, 1500);
-    }
-
-    const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
-    box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, const staticItems = [
-  const staticItems = [
+        setTimeout(() => { document.getElementById('loader-screen').style.opacity = '0'; setTimeout(() => { document.getElementByIdconst 
+            staticItems = [
         // --- LARGE STRUCTURES & WALLS ---
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -545], r: [270, 0], s: [368, 368] },
@@ -430,8 +426,11 @@ const glbItems = [
     // --- MISCELLANEOUS ---
     { src: 'IMG-20260131-WA0003.jpg', p: [-3, 13, -403], r: [90, 360], s: [26, 26, 1] },
     { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [16, 20, 1] }
-];
-0, "#ffffff"); 
+];('loader-screen').style.display = 'none'; animate(); }, 500); }, 1500);
+    }
+
+    const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
+    box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); 
     box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); 
     box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333"); 
     box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333"); 
