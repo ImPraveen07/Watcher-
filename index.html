@@ -163,31 +163,7 @@
         return textureCache[url]; 
     };
 
-    const glbItems = [
-        { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
-        { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
-        { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
-        { src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
-        { src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
-        { src: 'tablecloth_lowpoly.glb', p: [79, -35, -265], r: [0, 90], s: [90, 90, 90] },
-        { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
-        { src: 'boqu.glb', p: [-41, 12, -380], r: [82, 176], s: [20, 20, 20] },
-        { src: 'bhat.glb', p: [48, 20, -374], r: [0, 0], s: [6, 6, 6] },
-        { src: 'glass.glb', p: [32, 15, -386], r: [0, 188], s: [9, 9, 9] },
-        { src: 'hbday.glb', p: [-9, 170, -560], r: [0, 0], s: [92, 92, 92] },
-        { src: 'indu.glb', p: [-18, 90, -578], r: [0, 6], s: [56, 56, 56] },
-        { src: 'gift_box.glb', p: [103, 9, -228], r: [0, 270], s: [18, 18, 18] },
-        { src: 'gift_box (1).glb', p: [79, 6, -231], r: [0, 0], s: [29, 29, 29] },
-        { src: 'gifts.glb', p: [56, 10, -216], r: [0, 0], s: [2, 2, 2] },
-        { src: 'teddy.glb', p: [95, 23, -312], r: [0, 0], s: [14, 14, 14] },
-        { src: 'muff.glb', p: [55, 14, -251], r: [0, 0], s: [21, 21, 21] },
-        { src: 'hamper 2.glb', p: [-76, 22, -242], r: [0, 0], s: [21, 21, 21] },
-        { src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
-        { src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
-        { src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
-        { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
-        { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
-    ];
+
 
     const staticItems = [
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
@@ -197,7 +173,122 @@
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, -177], r: [90, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, -545], r: [270, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, 189], r: [270, 0], s: [368, 368] },
-    { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, 557], r: [90, 0], s: [368, 368] },
+    { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -4// 1. Fixed the duplicate source name
+const glbItems = [
+    { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
+    { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
+    { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
+    { src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
+    { src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
+    { src: 'tablecloth_lowpoly.glb', p: [79, -35, -265], r: [0, 90], s: [90, 90, 90] },
+    { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
+    { src: 'boqu.glb', p: [-41, 12, -380], r: [82, 176], s: [20, 20, 20] },
+    { src: 'bhat.glb', p: [48, 20, -374], r: [0, 0], s: [6, 6, 6] },
+    { src: 'glass.glb', p: [32, 15, -386], r: [0, 188], s: [9, 9, 9] },
+    { src: 'hbday.glb', p: [-9, 170, -560], r: [0, 0], s: [92, 92, 92] },
+    { src: 'indu.glb', p: [-18, 90, -578], r: [0, 6], s: [56, 56, 56] },
+    { src: 'gift_box.glb', p: [103, 9, -228], r: [0, 270], s: [18, 18, 18] },
+    { src: 'gift_box (1).glb', p: [79, 6, -231], r: [0, 0], s: [29, 29, 29] },
+    { src: 'gifts.glb', p: [56, 10, -216], r: [0, 0], s: [2, 2, 2] },
+    { src: 'teddy.glb', p: [95, 23, -312], r: [0, 0], s: [14, 14, 14] },
+    { src: 'muff.glb', p: [55, 14, -251], r: [0, 0], s: [21, 21, 21] },
+    { src: 'hamper 2.glb', p: [-76, 22, -242], r: [0, 0], s: [21, 21, 21] },
+    { src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
+    { src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
+    { src: 'flowerframe .glb', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] }, // Pointed to .glb instead of .glb_copy
+    { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
+    { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
+];
+
+async function boot() {
+    await initDB();
+    const statsText = document.getElementById('loader-stats');
+    const progressBar = document.getElementById('progress-bar');
+    const msgText = document.getElementById('loader-msg');
+    
+    let loadedCount = 0;
+    let totalMB = 0;
+
+    // Use a Promise-based approach for the GLB loading to ensure it finishes
+    const loadModel = (item) => {
+        return new Promise(async (resolve) => {
+            try {
+                let blob = await getCached(item.src);
+                if (!blob) {
+                    msgText.innerText = `Fetching: ${item.src}`;
+                    const res = await fetch(item.src);
+                    if (!res.ok) throw new Error("Fetch failed");
+                    blob = await res.blob();
+                    await saveCached(item.src, blob);
+                }
+                
+                totalMB += (blob.size / (1024 * 1024));
+                statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
+                
+                const url = URL.createObjectURL(blob);
+                loader.load(url, (gltf) => {
+                    const model = gltf.scene;
+                    model.traverse(node => {
+                        if (node.isMesh && node.material) {
+                            if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
+                                node.material.metalness = 1.0; 
+                                node.material.roughness = 0.05; 
+                                node.material.envMapIntensity = 15.0;
+                            } else { 
+                                node.material.metalness = 0.0; 
+                                node.material.roughness = 0.8; 
+                            }
+                        }
+                    });
+                    model.position.set(item.p[0], item.p[1], item.p[2]);
+                    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
+                    model.scale.set(item.s[0], item.s[1], item.s[2]);
+                    
+                    if (gltf.animations.length > 0) {
+                        const mixer = new THREE.AnimationMixer(model);
+                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                        mixers.push(mixer);
+                    }
+                    scene.add(model);
+                    URL.revokeObjectURL(url);
+                    resolve();
+                }, undefined, (err) => {
+                    console.error("Load error:", item.src);
+                    resolve(); // Resolve anyway to avoid hanging the loader
+                });
+            } catch (e) {
+                console.error("Fetch error:", item.src);
+                resolve();
+            }
+        });
+    };
+
+    // Load everything
+    for (const item of glbItems) {
+        await loadModel(item);
+        loadedCount++;
+        progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
+    }
+
+    // Load Static Image Planes
+    staticItems.forEach(d => {
+        const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
+        m.position.set(d.p[0], d.p[1], d.p[2]); 
+        m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
+        m.scale.set(d.s[0], d.s[1], 1);
+        scene.add(m);
+    });
+
+    msgText.innerText = "Welcome! ✨";
+    setTimeout(() => { 
+        document.getElementById('loader-screen').style.opacity = '0'; 
+        setTimeout(() => { 
+            document.getElementById('loader-screen').style.display = 'none'; 
+            animate(); 
+        }, 500); 
+    }, 1000);
+}
+6, 557], r: [90, 0], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, 189], r: [270, 180], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, 557], r: [90, 180], s: [368, 368] },
     { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, 557], r: [270, 180], s: [368, 368] },
@@ -316,47 +407,7 @@
     { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [16, 20, 1] }
     ];
 
-    async function boot() {
-        await initDB();
-        const statsText = document.getElementById('loader-stats');
-        const progressBar = document.getElementById('progress-bar');
-        const msgText = document.getElementById('loader-msg');
-        let loadedCount = 0, totalMB = 0;
-
-        for (let item of glbItems) {
-            let blob = await getCached(item.src);
-            if (!blob) {
-                msgText.innerText = `Caching: ${item.src}`;
-                const res = await fetch(item.src); blob = await res.blob();
-                await saveCached(item.src, blob);
-            }
-            if(blob) totalMB += (blob.size / (1024 * 1024));
-            loadedCount++;
-            statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
-            progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
-            if(blob) {
-                const url = URL.createObjectURL(blob);
-                loader.load(url, (gltf) => {
-                    const model = gltf.scene;
-                    model.traverse(node => {
-                        if (node.isMesh && node.material) {
-                            if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
-                                node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0;
-                            } else { node.material.metalness = 0.0; node.material.roughness = 0.8; }
-                        }
-                    });
-                    model.position.set(item.p[0], item.p[1], item.p[2]);
-                    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
-                    model.scale.set(item.s[0], item.s[1], item.s[2]);
-                    if (gltf.animations.length > 0) {
-                        const mixer = new THREE.AnimationMixer(model);
-                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-                        mixers.push(mixer);
-                    }
-                    scene.add(model); URL.revokeObjectURL(url);
-                });
-            }
-        }
+    
 
         staticItems.forEach(d => {
             const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
