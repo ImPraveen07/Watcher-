@@ -1,577 +1,420 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sleek Gallery - OG Size Fixed</title>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; user-select: none; }
-        #loader-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffe6f2; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
-        .cat-loader { position: relative; width: 80px; height: 50px; background: #fff; border-radius: 40px 40px 60px 60px; animation: bounce 0.6s infinite alternate; box-shadow: 0 5px 15px rgba(255,105,180,0.3); }
-        .cat-loader::before, .cat-loader::after { content: ''; position: absolute; top: -10px; width: 20px; height: 20px; background: #fff; border-radius: 5px; }
-        .cat-loader::before { left: 10px; transform: rotate(-15deg); }
-        .cat-loader::after { right: 10px; transform: rotate(15deg); }
-        .cat-eyes { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-around; padding: 0 15px; box-sizing: border-box; }
-        .cat-eyes::before, .cat-eyes::after { content: '•'; color: #ff69b4; font-size: 20px; }
-        @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-20px); } }
-        .loader-text { color: #ff69b4; font-size: 12px; margin-top: 35px; letter-spacing: 1px; font-weight: bold; text-shadow: 1px 1px #fff; }
-        #loader-stats { color: #ff85c1; font-size: 11px; margin-top: 8px; font-family: monospace; }
-        .progress-container { width: 180px; height: 6px; background: #fff; margin-top: 15px; border-radius: 10px; overflow: hidden; border: 2px solid #ffb3d9; }
-        #progress-bar { width: 0%; height: 100%; background: #ff69b4; transition: width 0.3s; }
-        #ui-layer, .action-btn { z-index: 1000; position: absolute; }
-        #ui-layer { top: 15px; width: 100%; text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        #room-display { font-size: 10px; color: #fff; background: rgba(255,105,180,0.7); padding: 4px 12px; border-radius: 15px; letter-spacing: 1px; }
-        .action-btn { left: 50%; transform: translateX(-50%); padding: 12px 24px; font-size: 13px; font-weight: bold; color: #fff; border-radius: 30px; display: none; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        #door-btn { top: 35%; background: #ff69b4; }
-        #power-btn { bottom: 85px; background: #222; transition: background 0.3s; }
-        #interact-btn { bottom: 30px; background: #007bff; }
-        #zone-move, #zone-look { position: absolute; top: 0; width: 48vw; height: 100vh; z-index: 500; }
-        #zone-move { left: 0; } #zone-look { right: 0; }
-        #joy-container { position: absolute; width: 80px; height: 80px; left: 60px; bottom: 60px; display: block; pointer-events: none; z-index: 600; }
-        #joy-base { width: 100%; height: 100%; border: 3px solid rgba(255,255,255,0.4); border-radius: 50%; background: rgba(255,105,180,0.2); backdrop-filter: blur(2px); }
-        #joy-stick { position: absolute; top: 50%; left: 50%; width: 35px; height: 35px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(255,105,180,0.5); }
-        #html-frame-element { width: 1280px; height: 720px; background: #000; border: 10px solid #111; box-sizing: border-box; border-radius: 10px; }
-        #totify-iframe { width: 100%; height: 100%; border: none; }
-        #touch-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 99; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Sleek Gallery - Multiplayer</title>
+<style>
+body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; user-select: none; }
+#loader-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffe6f2; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+.cat-loader { position: relative; width: 80px; height: 50px; background: #fff; border-radius: 40px 40px 60px 60px; animation: bounce 0.6s infinite alternate; box-shadow: 0 5px 15px rgba(255,105,180,0.3); }
+.cat-loader::before, .cat-loader::after { content: ''; position: absolute; top: -10px; width: 20px; height: 20px; background: #fff; border-radius: 5px; }
+.cat-loader::before { left: 10px; transform: rotate(-15deg); }
+.cat-loader::after { right: 10px; transform: rotate(15deg); }
+.cat-eyes { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-around; padding: 0 15px; box-sizing: border-box; }
+.cat-eyes::before, .cat-eyes::after { content: '•'; color: #ff69b4; font-size: 20px; }
+@keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-20px); } }
+.loader-text { color: #ff69b4; font-size: 12px; margin-top: 35px; letter-spacing: 1px; font-weight: bold; text-shadow: 1px 1px #fff; }
+#loader-stats { color: #ff85c1; font-size: 11px; margin-top: 8px; font-family: monospace; }
+.progress-container { width: 180px; height: 6px; background: #fff; margin-top: 15px; border-radius: 10px; overflow: hidden; border: 2px solid #ffb3d9; }
+#progress-bar { width: 0%; height: 100%; background: #ff69b4; transition: width 0.3s; }
+#ui-layer, .action-btn { z-index: 1000; position: absolute; }
+#ui-layer { top: 15px; width: 100%; text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#room-display, #player-count { font-size: 10px; color: #fff; background: rgba(255,105,180,0.7); padding: 4px 12px; border-radius: 15px; letter-spacing: 1px; pointer-events: auto;}
+.action-btn { left: 50%; transform: translateX(-50%); padding: 12px 24px; font-size: 13px; font-weight: bold; color: #fff; border-radius: 30px; display: none; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+#door-btn { top: 35%; background: #ff69b4; }
+#power-btn { bottom: 85px; background: #222; transition: background 0.3s; }
+#interact-btn { bottom: 30px; background: #007bff; }
+#zone-move, #zone-look { position: absolute; top: 0; width: 48vw; height: 100vh; z-index: 500; }
+#zone-move { left: 0; } #zone-look { right: 0; }
+#joy-container { position: absolute; width: 80px; height: 80px; left: 60px; bottom: 60px; display: block; pointer-events: none; z-index: 600; }
+#joy-base { width: 100%; height: 100%; border: 3px solid rgba(255,255,255,0.4); border-radius: 50%; background: rgba(255,105,180,0.2); backdrop-filter: blur(2px); }
+#joy-stick { position: absolute; top: 50%; left: 50%; width: 35px; height: 35px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(255,105,180,0.5); }
+#html-frame-element { width: 1280px; height: 720px; background: #000; border: 10px solid #111; box-sizing: border-box; border-radius: 10px; }
+#totify-iframe { width: 100%; height: 100%; border: none; }
+#touch-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 99; }
+#name-prompt { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+#name-input { padding:12px; border-radius:8px; border:none; margin-bottom:10px; width:200px; text-align:center; }
+#name-confirm { padding:10px 20px; background:#ff69b4; color:#fff; border:none; border-radius:20px; font-weight:bold; cursor:pointer; }
+</style>
 </head>
 <body>
-
 <div id="loader-screen">
-    <div class="cat-loader"><div class="cat-eyes"></div></div>
-    <div class="loader-text" id="loader-msg">Getting things ready... ✨</div>
-    <div id="loader-stats">0.0 MB / CALCULATING...</div>
-    <div class="progress-container"><div id="progress-bar"></div></div>
+<div class="cat-loader"><div class="cat-eyes"></div></div>
+<div class="loader-text" id="loader-msg">Connecting to Universe... ✨</div>
+<div id="loader-stats">0.0 MB / CALCULATING...</div>
+<div class="progress-container"><div id="progress-bar"></div></div>
 </div>
-
+<div id="name-prompt">
+<input type="text" id="name-input" placeholder="Enter Your Name" maxlength="12">
+<button id="name-confirm">JOIN WORLD</button>
+</div>
 <div id="ui-layer">
-    <div id="room-display">SPAWN ROOM</div>
+<div id="room-display">SPAWN ROOM</div>
+<div id="player-count">Players: 1/2</div>
 </div>
-
 <button id="door-btn" class="action-btn">🚪 OPEN DOOR</button>
 <button id="power-btn" class="action-btn">🔌 POWER ON</button>
 <button id="interact-btn" class="action-btn">🎯 INTERACT</button>
-
 <div id="zone-move"></div><div id="zone-look"></div>
 <div id="joy-container"><div id="joy-base"></div><div id="joy-stick"></div></div>
-
 <div id="html-frame-element" style="display:none;">
-    <div id="touch-blocker"></div>
-    <iframe id="totify-iframe"></iframe>
+<div id="touch-blocker"></div>
+<iframe id="totify-iframe"></iframe>
 </div>
-
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module">
-    import * as THREE from 'three';
-    import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-
-    const DB_NAME = "INDU", STORE_NAME = "indu";
-    let db = null;
-    const initDB = () => new Promise((res) => {
-        const req = indexedDB.open(DB_NAME, 2);
-        req.onupgradeneeded = e => {
-            let database = e.target.result;
-            if (!database.objectStoreNames.contains(STORE_NAME)) database.createObjectStore(STORE_NAME);
-        };
-        req.onsuccess = e => { db = e.target.result; res(); };
-        req.onerror = () => res();
-    });
-    const getCached = (key) => new Promise(res => {
-        if (!db) return res(null);
-        const tx = db.transaction(STORE_NAME, "readonly");
-        const req = tx.objectStore(STORE_NAME).get(key);
-        req.onsuccess = () => res(req.result);
-        req.onerror = () => res(null);
-    });
-    const saveCached = (key, blob) => new Promise(res => {
-        if (!db) return res();
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        tx.objectStore(STORE_NAME).put(blob, key);
-        tx.oncomplete = () => res();
-    });
-
-    const floorY = -50, T = 350, W = 1200, H = 1200, ceilingY = floorY + T;
-    let isDoorOpen = false, isPowered = false, isInteracting = false;
-    let velocity = new THREE.Vector3(), move = {x:0, y:0}, mixers = [];
-    const clock = new THREE.Clock();
-    const scene = new THREE.Scene(); 
-    const cssScene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 7000);
-    camera.rotation.order = 'YXZ';
-
-    const cssRenderer = new CSS3DRenderer();
-    cssRenderer.setSize(window.innerWidth, window.innerHeight);
-    cssRenderer.domElement.style.position = 'absolute';
-    cssRenderer.domElement.style.top = '0';
-    cssRenderer.domElement.style.zIndex = '1';
-    cssRenderer.domElement.style.pointerEvents = 'none'; 
-    document.body.appendChild(cssRenderer.domElement);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = .5;
-    renderer.setClearColor(0x111111, 1); 
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = '0';
-    renderer.domElement.style.zIndex = '2'; 
-    document.body.appendChild(renderer.domElement);
-
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
-    const ambLight = new THREE.AmbientLight(0xffffff, 0.1);
-    scene.add(ambLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.1);
-    dirLight.position.set(0, 300, 0); 
-    scene.add(dirLight);
-
-    const texLoader = new THREE.TextureLoader();
-    const loader = new GLTFLoader();
-    const sharedPlaneGeom = new THREE.PlaneGeometry(1, 1);
-    const textureCache = {};
-    const getTex = (url) => { 
-        if (!textureCache[url]) { textureCache[url] = texLoader.load(url); }
-        return textureCache[url]; 
-    };
-
-    const glbItems = [
-        { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
-        { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
-        { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
-        { src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
-        { src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
-        { src: 'tablecloth_lowpoly.glb', p: [79, -35, -265], r: [0, 90], s: [90, 90, 90] },
-        { src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
-        { src: 'boqu.glb', p: [-41, 12, -380], r: [82, 176], s: [20, 20, 20] },
-        { src: 'bhat.glb', p: [48, 20, -374], r: [0, 0], s: [6, 6, 6] },
-        { src: 'glass.glb', p: [32, 15, -386], r: [0, 188], s: [9, 9, 9] },
-        { src: 'hbday.glb', p: [-9, 170, -560], r: [0, 0], s: [92, 92, 92] },
-        { src: 'indu.glb', p: [-18, 90, -578], r: [0, 6], s: [56, 56, 56] },
-        { src: 'gift_box.glb', p: [103, 9, -228], r: [0, 270], s: [18, 18, 18] },
-        { src: 'gift_box (1).glb', p: [79, 6, -231], r: [0, 0], s: [29, 29, 29] },
-        { src: 'gifts.glb', p: [56, 10, -216], r: [0, 0], s: [2, 2, 2] },
-        { src: 'teddy.glb', p: [95, 23, -312], r: [0, 0], s: [14, 14, 14] },
-        { src: 'muff.glb', p: [55, 14, -251], r: [0, 0], s: [21, 21, 21] },
-        { src: 'hamper 2.glb', p: [-76, 22, -242], r: [0, 0], s: [21, 21, 21] },
-        { src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
-        { src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
-        { src: 'flowerframe .glb', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
-        { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
-        { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
-    ];
-
-    const staticItems = [
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -545], r: [270, 0], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, -545], r: [270, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, -177], r: [90, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, -177], r: [90, 0], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, -545], r: [270, 0], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, 189], r: [270, 0], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, 557], r: [90, 0], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, 189], r: [270, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, 557], r: [90, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, 557], r: [270, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, 189], r: [90, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, 189], r: [270, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, 557], r: [90, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, -177], r: [90, 180], s: [368, 368] },
-        { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, -545], r: [270, 180], s: [368, 368] },
-        { src: '1.jpg', p: [573, 69, -477], r: [0, 115], s: [16, 20, 1] },
-        { src: '2.png', p: [573, 69, -435], r: [0, 104], s: [16, 20, 1] },
-        { src: '3.png', p: [573, 69, -401], r: [0, 74], s: [16, 20, 1] },
-        { src: '4.png', p: [556, 50, -469], r: [0, 116], s: [16, 20, 1] },
-        { src: '5.png', p: [573, 49, -453], r: [0, 117], s: [16, 20, 1] },
-        { src: '6.png', p: [568, 44, -437], r: [0, 114], s: [16, 20, 1] },
-        { src: '7.png', p: [561, 69, -459], r: [0, 100], s: [16, 20, 1] },
-        { src: '8.png', p: [585, 69, -449], r: [0, 80], s: [16, 20, 1] },
-        { src: '9.png', p: [585, -4, -481], r: [0, 104], s: [16, 20, 1] },
-        { src: '10.png', p: [585, 9, -491], r: [0, 107], s: [16, 20, 1] },
-        { src: '11.png', p: [595, 9, -476], r: [0, 110], s: [16, 20, 1] },
-        { src: '12.png', p: [590, 29, -488], r: [0, 126], s: [16, 20, 1] },
-        { src: '13.png', p: [579, 29, -469], r: [0, 109], s: [16, 20, 1] },
-        { src: '14.png', p: [591, 3, -459], r: [0, 108], s: [16, 20, 1] },
-        { src: '15.png', p: [586, 3, -441], r: [0, 116], s: [16, 20, 1] },
-        { src: '16.png', p: [573, 69, -377], r: [0, 115], s: [16, 20, 1] },
-        { src: '17.png', p: [573, 69, -335], r: [0, 104], s: [16, 20, 1] },
-        { src: '18.png', p: [573, 69, -301], r: [0, 74], s: [16, 20, 1] },
-        { src: '19.png', p: [556, 50, -369], r: [0, 116], s: [16, 20, 1] },
-        { src: '20.png', p: [573, 49, -353], r: [0, 117], s: [16, 20, 1] },
-        { src: '21.png', p: [568, 44, -337], r: [0, 114], s: [16, 20, 1] },
-        { src: '22.png', p: [561, 69, -359], r: [0, 100], s: [16, 20, 1] },
-        { src: '23.png', p: [585, 69, -349], r: [0, 80], s: [16, 20, 1] },
-        { src: '24.png', p: [585, -4, -381], r: [0, 104], s: [16, 20, 1] },
-        { src: '25.png', p: [585, 9, -391], r: [0, 107], s: [16, 20, 1] },
-        { src: '26.png', p: [595, 9, -376], r: [0, 110], s: [16, 20, 1] },
-        { src: '27.png', p: [590, 29, -388], r: [0, 126], s: [16, 20, 1] },
-        { src: '28.png', p: [579, 29, -369], r: [0, 109], s: [16, 20, 1] },
-        { src: '29.png', p: [591, 3, -359], r: [0, 108], s: [16, 20, 1] },
-        { src: '30.png', p: [586, 3, -341], r: [0, 116], s: [16, 20, 1] },
-        { src: '31.png', p: [573, 69, -277], r: [0, 115], s: [16, 20, 1] },
-        { src: '32.png', p: [573, 69, -235], r: [0, 104], s: [16, 20, 1] },
-        { src: '33.png', p: [573, 69, -201], r: [0, 74], s: [16, 20, 1] },
-        { src: '34.png', p: [556, 50, -269], r: [0, 116], s: [16, 20, 1] },
-        { src: '35.png', p: [573, 49, -253], r: [0, 117], s: [16, 20, 1] },
-        { src: '36.png', p: [568, 44, -237], r: [0, 114], s: [16, 20, 1] },
-        { src: '37.png', p: [561, 69, -259], r: [0, 100], s: [16, 20, 1] },
-        { src: '38.png', p: [585, 69, -249], r: [0, 80], s: [16, 20, 1] },
-        { src: '39.png', p: [585, -4, -281], r: [0, 104], s: [16, 20, 1] },
-        { src: '40.png', p: [585, 9, -291], r: [0, 107], s: [16, 20, 1] },
-        { src: '41.png', p: [595, 9, -276], r: [0, 110], s: [16, 20, 1] },
-        { src: '42.png', p: [590, 29, -288], r: [0, 126], s: [16, 20, 1] },
-        { src: '43.png', p: [579, 29, -269], r: [0, 109], s: [16, 20, 1] },
-        { src: '44.png', p: [591, 3, -259], r: [0, 108], s: [16, 20, 1] },
-        { src: '45.png', p: [586, 3, -241], r: [0, 116], s: [16, 20, 1] },
-        { src: '46.png', p: [573, 69, -177], r: [0, 115], s: [16, 20, 1] },
-        { src: '47.png', p: [573, 69, -135], r: [0, 104], s: [16, 20, 1] },
-        { src: '48.png', p: [573, 69, -101], r: [0, 74], s: [16, 20, 1] },
-        { src: '49.png', p: [556, 50, -169], r: [0, 116], s: [16, 20, 1] },
-        { src: '50.png', p: [573, 49, -153], r: [0, 117], s: [16, 20, 1] },
-        { src: '51.png', p: [568, 44, -137], r: [0, 114], s: [16, 20, 1] },
-        { src: '52.png', p: [561, 69, -159], r: [0, 100], s: [16, 20, 1] },
-        { src: '53.png', p: [585, 69, -149], r: [0, 80], s: [16, 20, 1] },
-        { src: '54.png', p: [585, -4, -181], r: [0, 104], s: [16, 20, 1] },
-        { src: '55.png', p: [585, 9, -191], r: [0, 107], s: [16, 20, 1] },
-        { src: '56.png', p: [595, 9, -176], r: [0, 110], s: [16, 20, 1] },
-        { src: '57.png', p: [590, 29, -188], r: [0, 126], s: [16, 20, 1] },
-        { src: '58.png', p: [579, 29, -169], r: [0, 109], s: [16, 20, 1] },
-        { src: '59.png', p: [591, 3, -159], r: [0, 108], s: [16, 20, 1] },
-        { src: '60.png', p: [586, 3, -141], r: [0, 116], s: [16, 20, 1] },
-        { src: '61.png', p: [573, 69, -77], r: [0, 115], s: [16, 20, 1] },
-        { src: '62.png', p: [573, 69, -35], r: [0, 104], s: [16, 20, 1] },
-        { src: '63.png', p: [573, 69, -1], r: [0, 74], s: [16, 20, 1] },
-        { src: '64.png', p: [556, 50, -69], r: [0, 116], s: [16, 20, 1] },
-        { src: '65.png', p: [573, 49, -53], r: [0, 117], s: [16, 20, 1] },
-        { src: '66.png', p: [568, 44, -37], r: [0, 114], s: [16, 20, 1] },
-        { src: '67.png', p: [561, 69, -59], r: [0, 100], s: [16, 20, 1] },
-        { src: '68.png', p: [585, 69, -49], r: [0, 80], s: [16, 20, 1] },
-        { src: '69.png', p: [585, -4, -81], r: [0, 104], s: [16, 20, 1] },
-        { src: '70.png', p: [585, 9, -91], r: [0, 107], s: [16, 20, 1] },
-        { src: '71.png', p: [595, 9, -76], r: [0, 110], s: [16, 20, 1] },
-        { src: '72.png', p: [590, 29, -88], r: [0, 126], s: [16, 20, 1] },
-        { src: '73.png', p: [579, 29, -69], r: [0, 109], s: [16, 20, 1] },
-        { src: '74.png', p: [591, 3, -59], r: [0, 108], s: [16, 20, 1] },
-        { src: '75.png', p: [586, 3, -41], r: [0, 116], s: [16, 20, 1] },
-        { src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [-599, 48, -306], r: [0, 90], s: [622, 582] },
-        { src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [599, 48, -306], r: [0, 90], s: [622, 582] },
-        { src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [599, 48, 319], r: [0, 90], s: [622, 582] },
-        { src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [-599, 48, 318], r: [0, 90], s: [622, 582] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [598, 184, -599], r: [0, 0], s: [800, 589] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [-202, 184, -599], r: [0, 0], s: [800, 589] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [-449, 179, -9], r: [0, 0], s: [800, 589] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [449, 184, -9], r: [0, 0], s: [800, 589] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [49, 184, 0], r: [0, 90], s: [18, 679] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [2, 211, -8], r: [0, 0], s: [106, 173] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [2, 211, 8], r: [0, 0], s: [106, 173] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [449, 184, 9], r: [0, 0], s: [800, 589] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [-449, 179, 9], r: [0, 0], s: [800, 589] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [-49, 184, 0], r: [0, 90], s: [18, 679] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [598, 184, 599], r: [0, 0], s: [800, 589] },
-        { src: 'images - 2026-01-30T184744.639.jpeg', p: [-202, 184, 599], r: [0, 0], s: [800, 589] },
-        { src: '34.png', p: [573, 160, -577], r: [0, 115], s: [16, 20, 1] },
-        { src: '89.png', p: [573, 160, -535], r: [0, 104], s: [16, 20, 1] },
-        { src: '88.png', p: [573, 160, -501], r: [0, 74], s: [16, 20, 1] },
-        { src: '87.png', p: [556, 141, -569], r: [0, 116], s: [16, 20, 1] },
-        { src: '86.png', p: [573, 140, -553], r: [0, 117], s: [16, 20, 1] },
-        { src: '85.png', p: [568, 135, -537], r: [0, 114], s: [16, 20, 1] },
-        { src: '84.png', p: [561, 160, -559], r: [0, 100], s: [16, 20, 1] },
-        { src: '83.png', p: [585, 160, -549], r: [0, 80], s: [16, 20, 1] },
-        { src: '82.png', p: [585, 87, -581], r: [0, 104], s: [16, 20, 1] },
-        { src: '81.png', p: [585, 100, -591], r: [0, 107], s: [16, 20, 1] },
-        { src: '80.png', p: [595, 100, -576], r: [0, 110], s: [16, 20, 1] },
-        { src: '79.png', p: [590, 120, -588], r: [0, 126], s: [16, 20, 1] },
-        { src: '78.png', p: [579, 120, -569], r: [0, 109], s: [16, 20, 1] },
-        { src: '77.png', p: [591, 94, -559], r: [0, 108], s: [16, 20, 1] },
-        { src: '76.png', p: [586, 94, -541], r: [0, 116], s: [16, 20, 1] },
-        { src: '75.png', p: [573, 161, -477], r: [0, 115], s: [16, 20, 1] },
-        { src: '74.png', p: [573, 161, -435], r: [0, 104], s: [16, 20, 1] },
-        { src: '73.png', p: [573, 161, -401], r: [0, 74], s: [16, 20, 1] },
-        { src: '72.png', p: [556, 142, -469], r: [0, 116], s: [16, 20, 1] },
-        { src: '71.png', p: [573, 141, -453], r: [0, 117], s: [16, 20, 1] },
-        { src: '70.png', p: [568, 136, -437], r: [0, 114], s: [16, 20, 1] },
-        { src: '69.png', p: [561, 161, -459], r: [0, 100], s: [16, 20, 1] },
-        { src: '68.png', p: [585, 161, -449], r: [0, 80], s: [16, 20, 1] },
-        { src: '67.png', p: [585, 88, -481], r: [0, 104], s: [16, 20, 1] },
-        { src: '66.png', p: [585, 101, -491], r: [0, 107], s: [16, 20, 1] },
-        { src: '65.png', p: [595, 101, -476], r: [0, 110], s: [16, 20, 1] },
-        { src: '64.png', p: [590, 121, -488], r: [0, 126], s: [16, 20, 1] },
-        { src: '63.png', p: [579, 121, -469], r: [0, 109], s: [16, 20, 1] },
-        { src: '62.png', p: [591, 95, -459], r: [0, 108], s: [16, 20, 1] },
-        { src: '61.png', p: [586, 95, -441], r: [0, 116], s: [16, 20, 1] },
-        { src: '60.png', p: [573, 161, -377], r: [0, 115], s: [16, 20, 1] },
-        { src: '59.png', p: [573, 161, -335], r: [0, 104], s: [16, 20, 1] },
-        { src: '58.png', p: [573, 161, -301], r: [0, 74], s: [16, 20, 1] },
-        { src: '57.png', p: [556, 142, -369], r: [0, 116], s: [16, 20, 1] },
-        { src: '56.png', p: [573, 141, -353], r: [0, 117], s: [16, 20, 1] },
-        { src: '55.png', p: [568, 136, -337], r: [0, 114], s: [16, 20, 1] },
-        { src: '54.png', p: [561, 161, -359], r: [0, 100], s: [16, 20, 1] },
-        { src: '53.png', p: [585, 161, -349], r: [0, 80], s: [16, 20, 1] },
-        { src: '52.png', p: [585, 88, -381], r: [0, 104], s: [16, 20, 1] },
-        { src: '51.png', p: [585, 101, -391], r: [0, 107], s: [16, 20, 1] },
-        { src: '50.png', p: [595, 101, -376], r: [0, 110], s: [16, 20, 1] },
-        { src: '49.png', p: [590, 121, -388], r: [0, 126], s: [16, 20, 1] },
-        { src: '48.png', p: [579, 121, -369], r: [0, 109], s: [16, 20, 1] },
-        { src: '47.png', p: [591, 95, -359], r: [0, 108], s: [16, 20, 1] },
-        { src: '46.png', p: [586, 95, -341], r: [0, 116], s: [16, 20, 1] },
-        { src: '45.png', p: [573, 161, -277], r: [0, 115], s: [16, 20, 1] },
-        { src: '44.png', p: [573, 161, -235], r: [0, 104], s: [16, 20, 1] },
-        { src: '43.png', p: [573, 161, -201], r: [0, 74], s: [16, 20, 1] },
-        { src: '42.png', p: [556, 142, -269], r: [0, 116], s: [16, 20, 1] },
-        { src: '41.png', p: [573, 141, -253], r: [0, 117], s: [16, 20, 1] },
-        { src: '40.png', p: [568, 136, -237], r: [0, 114], s: [16, 20, 1] },
-        { src: '39.png', p: [561, 161, -259], r: [0, 100], s: [16, 20, 1] },
-        { src: '38.png', p: [585, 161, -249], r: [0, 80], s: [16, 20, 1] },
-        { src: '37.png', p: [585, 88, -281], r: [0, 104], s: [16, 20, 1] },
-        { src: '36.png', p: [585, 101, -291], r: [0, 107], s: [16, 20, 1] },
-        { src: '35.png', p: [595, 101, -276], r: [0, 110], s: [16, 20, 1] },
-        { src: '34.png', p: [590, 121, -288], r: [0, 126], s: [16, 20, 1] },
-        { src: '33.png', p: [579, 121, -269], r: [0, 109], s: [16, 20, 1] },
-        { src: '32.png', p: [591, 95, -259], r: [0, 108], s: [16, 20, 1] },
-        { src: '31.png', p: [586, 95, -241], r: [0, 116], s: [16, 20, 1] },
-        { src: '30.png', p: [573, 161, -177], r: [0, 115], s: [16, 20, 1] },
-        { src: '29.png', p: [573, 161, -135], r: [0, 104], s: [16, 20, 1] },
-        { src: '28.png', p: [573, 161, -101], r: [0, 74], s: [16, 20, 1] },
-        { src: '27.png', p: [556, 142, -169], r: [0, 116], s: [16, 20, 1] },
-        { src: '26.png', p: [573, 141, -153], r: [0, 117], s: [16, 20, 1] },
-        { src: '25.png', p: [568, 136, -137], r: [0, 114], s: [16, 20, 1] },
-        { src: '24.png', p: [561, 161, -159], r: [0, 100], s: [16, 20, 1] },
-        { src: '23.png', p: [585, 161, -149], r: [0, 80], s: [16, 20, 1] },
-        { src: '22.png', p: [585, 88, -181], r: [0, 104], s: [16, 20, 1] },
-        { src: '21.png', p: [585, 101, -191], r: [0, 107], s: [16, 20, 1] },
-        { src: '20.png', p: [595, 101, -176], r: [0, 110], s: [16, 20, 1] },
-        { src: '19.png', p: [590, 121, -188], r: [0, 126], s: [16, 20, 1] },
-        { src: '18.png', p: [579, 121, -169], r: [0, 109], s: [16, 20, 1] },
-        { src: '17.png', p: [591, 95, -159], r: [0, 108], s: [16, 20, 1] },
-        { src: '16.png', p: [586, 95, -141], r: [0, 116], s: [16, 20, 1] },
-        { src: '15.png', p: [573, 161, -77], r: [0, 115], s: [16, 20, 1] },
-        { src: '14.png', p: [573, 161, -35], r: [0, 104], s: [16, 20, 1] },
-        { src: '13.png', p: [573, 161, -1], r: [0, 74], s: [16, 20, 1] },
-        { src: '12.png', p: [556, 142, -69], r: [0, 116], s: [16, 20, 1] },
-        { src: '11.png', p: [573, 141, -53], r: [0, 117], s: [16, 20, 1] },
-        { src: '10.png', p: [568, 136, -37], r: [0, 114], s: [16, 20, 1] },
-        { src: '9.png', p: [561, 161, -59], r: [0, 100], s: [16, 20, 1] },
-        { src: '8.png', p: [585, 161, -49], r: [0, 80], s: [16, 20, 1] },
-        { src: '7.png', p: [585, 88, -81], r: [0, 104], s: [16, 20, 1] },
-        { src: '6.png', p: [585, 101, -91], r: [0, 107], s: [16, 20, 1] },
-        { src: '5.png', p: [595, 101, -76], r: [0, 110], s: [16, 20, 1] },
-        { src: '4.png', p: [590, 121, -88], r: [0, 126], s: [16, 20, 1] },
-        { src: '3.png', p: [579, 121, -69], r: [0, 109], s: [16, 20, 1] },
-        { src: '2.png', p: [591, 95, -59], r: [0, 108], s: [16, 20, 1] },
-        { src: '1.jpg', p: [586, 95, -41], r: [0, 116], s: [16, 20, 1] },
-        { src: 'IMG-20260131-WA0003.jpg', p: [-3, 13, -403], r: [90, 360], s: [26, 26, 1] },
-        { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [16, 20, 1] }
-    ];
-
-    async function boot() {
-        await initDB();
-        const statsText = document.getElementById('loader-stats');
-        const progressBar = document.getElementById('progress-bar');
-        const msgText = document.getElementById('loader-msg');
-        let loadedCount = 0, totalMB = 0;
-
-        const loadGLB = (item) => new Promise(async (resolve) => {
-            try {
-                let blob = await getCached(item.src);
-                if (!blob) {
-                    msgText.innerText = `Fetching: ${item.src}`;
-                    const res = await fetch(item.src);
-                    if(!res.ok) throw new Error("File not found");
-                    blob = await res.blob();
-                    await saveCached(item.src, blob);
-                }
-                totalMB += (blob.size / (1024 * 1024));
-                statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
-                
-                const url = URL.createObjectURL(blob);
-                loader.load(url, (gltf) => {
-                    const model = gltf.scene;
-                    model.traverse(node => {
-                        if (node.isMesh && node.material) {
-                            if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
-                                node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0;
-                            } else { node.material.metalness = 0.0; node.material.roughness = 0.8; }
-                        }
-                    });
-                    model.position.set(item.p[0], item.p[1], item.p[2]);
-                    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
-                    model.scale.set(item.s[0], item.s[1], item.s[2]);
-                    if (gltf.animations.length > 0) {
-                        const mixer = new THREE.AnimationMixer(model);
-                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-                        mixers.push(mixer);
-                    }
-                    scene.add(model);
-                    URL.revokeObjectURL(url);
-                    resolve();
-                }, undefined, resolve);
-            } catch (e) { console.error(e); resolve(); }
-        });
-
-        for (const item of glbItems) {
-            await loadGLB(item);
-            loadedCount++;
-            progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
-        }
-
-        staticItems.forEach(d => {
-            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
-            m.position.set(d.p[0], d.p[1], d.p[2]); 
-            m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
-            m.scale.set(d.s[0], d.s[1], 1);
-            scene.add(m);
-        });
-
-        msgText.innerText = "Ready! ✨";
-        setTimeout(() => { 
-            document.getElementById('loader-screen').style.opacity = '0'; 
-            setTimeout(() => { 
-                document.getElementById('loader-screen').style.display = 'none'; 
-                animate(); 
-            }, 500); 
-        }, 1200);
-    }
-
-    const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
-    box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); 
-    box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); 
-    box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333"); 
-    box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333"); 
-    box(100, T-180, 15, 0, floorY+260, 0, "#333"); const doorMesh = box(100, 180, 8, 0, floorY + 90, 0, "#111");
-
-    const frameEl = document.getElementById('html-frame-element');
-    const cssObj = new CSS3DObject(frameEl); 
-    cssObj.position.set(-585, floorY + 150, -300); 
-    cssObj.rotation.y = Math.PI/2; 
-    cssObj.scale.set(0.15, 0.15, 0.15); 
-    cssScene.add(cssObj);
-
-    const occMesh = new THREE.Mesh(new THREE.PlaneGeometry(1280, 720), new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0, blending: THREE.NoBlending })); 
-    occMesh.position.copy(cssObj.position); occMesh.rotation.copy(cssObj.rotation); occMesh.scale.copy(cssObj.scale); 
-    scene.add(occMesh);
-
-    let joyId = null, lookId = null, lastL = {x:0, y:0};
-    const zMove = document.getElementById('zone-move'), joyS = document.getElementById('joy-stick'), joyC = document.getElementById('joy-container');
-    let joySt = {x:0, y:0};
-
-    zMove.addEventListener('touchstart', e => { 
-        if(isInteracting) return; 
-        const t = e.changedTouches[0]; joyId = t.identifier; joySt = {x:t.clientX, y:t.clientY}; 
-    });
-
-    zMove.addEventListener('touchmove', e => { 
-        if(isInteracting) return; 
-        for(let t of e.changedTouches) if(t.identifier === joyId) { 
-            let dx = t.clientX-joySt.x, dy = t.clientY-joySt.y; 
-            const d = Math.min(Math.sqrt(dx*dx+dy*dy), 35), a = Math.atan2(dy, dx); 
-            joyS.style.transform = `translate(calc(-50% + ${Math.cos(a)*d}px), calc(-50% + ${Math.sin(a)*d}px))`; 
-            move = {x: Math.cos(a)*d/35, y: Math.sin(a)*d/35}; 
-        } 
-    });
-
-    zMove.addEventListener('touchend', () => { joyId=null; move={x:0,y:0}; joyS.style.transform = 'translate(-50%, -50%)'; });
-    
-    window.addEventListener('touchstart', e => { 
-        if(e.target.closest('.action-btn')) return; 
-        const t = e.changedTouches[0];
-        if (t.identifier === joyId) return;
-        if (isInteracting && e.target.id === "totify-iframe") return;
-        lookId = t.identifier; 
-        lastL = {x:t.clientX, y:t.clientY}; 
-    }, { passive: false });
-
-    window.addEventListener('touchmove', e => { 
-        for(let t of e.changedTouches) {
-            if(t.identifier === lookId) {
-                camera.rotation.y -= (t.clientX - lastL.x) * 0.0035;
-                camera.rotation.x -= (t.clientY - lastL.y) * 0.0035;
-                camera.rotation.x = Math.max(-1.4, Math.min(1.4, camera.rotation.x));
-                lastL = {x: t.clientX, y: t.clientY};
-            }
-        }
-    }, { passive: false });
-
-    window.addEventListener('touchend', e => {
-        for(let t of e.changedTouches) if(t.identifier === lookId) lookId = null;
-    });
-
-    const iBtn = document.getElementById('interact-btn'), pBtn = document.getElementById('power-btn');
-    document.getElementById('door-btn').onclick = () => isDoorOpen = !isDoorOpen;
-    pBtn.onclick = () => { 
-        isPowered = !isPowered; 
-        document.getElementById('totify-iframe').src = isPowered ? "https://impraveen07.github.io/Win7/" : ""; 
-        frameEl.style.display = isPowered ? 'block' : 'none'; 
-        pBtn.innerText = isPowered ? "🔌 POWER OFF" : "🔌 POWER ON"; 
-        pBtn.style.background = isPowered ? "#dc3545" : "#222"; 
-    };
-    
-    iBtn.onclick = () => { 
-        isInteracting = !isInteracting; 
-        if(isInteracting) { 
-            cssRenderer.domElement.style.zIndex='999'; cssRenderer.domElement.style.pointerEvents='auto'; 
-            renderer.domElement.style.zIndex='1'; 
-            joyC.style.display = 'none'; document.getElementById('touch-blocker').style.display='none'; 
-            iBtn.innerText="🔒 EXIT INTERACT"; iBtn.style.background="#dc3545"; 
-        } else { 
-            renderer.domElement.style.zIndex='2'; cssRenderer.domElement.style.zIndex='1'; cssRenderer.domElement.style.pointerEvents='none'; 
-            joyC.style.display = 'block'; document.getElementById('touch-blocker').style.display='block'; 
-            iBtn.innerText="🎯 INTERACT"; iBtn.style.background="#007bff"; move={x:0,y:0}; 
-        } 
-    };
-
-    camera.position.set(0, 50, 400);
-    const fVec = new THREE.Vector3(), rVec = new THREE.Vector3();
-    let surpriseTriggered = false, fadeLight = false;
-    const poppers = [], balloons = [], popColors = [0xff69b4, 0xffb3d9, 0xff1493, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff, 0xffa500];
-
-    function triggerParty() {
-        fadeLight = true;
-        const stripGeo = new THREE.PlaneGeometry(8, 3), squareGeo = new THREE.PlaneGeometry(5, 5), dotGeo = new THREE.CircleGeometry(3, 8);
-        for(let i=0; i<800; i++) {
-            const m = new THREE.Mesh([stripGeo, squareGeo, dotGeo][Math.floor(Math.random()*3)], new THREE.MeshBasicMaterial({color: popColors[Math.floor(Math.random()*popColors.length)], side:2}));
-            m.position.set((Math.random()-0.5)*900, 330, -100 - Math.random()*500); 
-            scene.add(m);
-            poppers.push({ mesh: m, vel: new THREE.Vector3((Math.random()-0.5)*3.5, -(Math.random()*1.8 + 1.2), (Math.random()-0.5)*3.5), rot: new THREE.Vector3(Math.random()*0.2, Math.random()*0.2, 0) });
-        }
-        for(let i=0; i<40; i++) {
-            const bGrp = new THREE.Group();
-            const bGeo = new THREE.SphereGeometry(14, 20, 20); bGeo.scale(1, 1.3, 1);
-            const bMesh = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({ color: popColors[Math.floor(Math.random()*popColors.length)], metalness: 0.1, roughness: 0.1, transparent: true, opacity: 0.9 }));
-            const knot = new THREE.Mesh(new THREE.ConeGeometry(3, 4, 8), bMesh.material); knot.position.y = -18; knot.rotation.x = Math.PI; bMesh.add(knot);
-            bGrp.add(bMesh); bGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -18, 0), new THREE.Vector3(0, -120, 0)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })));
-            bGrp.position.set((Math.random()-0.5)*700, floorY - 50, -100 - Math.random()*500);
-            scene.add(bGrp);
-            balloons.push({ obj: bGrp, speed: 1.5 + Math.random() * 2, off: Math.random() * 100, atCeiling: false });
-        }
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta(), time = Date.now() * 0.001;
-        mixers.forEach(m => m.update(delta));
-        if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) { surpriseTriggered = true; triggerParty(); }
-        if(fadeLight) { ambLight.intensity += (1.4 - ambLight.intensity) * 0.05; dirLight.intensity += (2.5 - dirLight.intensity) * 0.05; }
-        poppers.forEach(p => { if(p.mesh.position.y > floorY + 2) { p.mesh.position.add(p.vel); p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y; } });
-        balloons.forEach(b => { 
-            if(!b.atCeiling) { b.obj.position.y += b.speed; b.obj.position.x += Math.sin(time + b.off) * 0.3; if(b.obj.position.y >= ceilingY - 18) b.atCeiling = true; } 
-            else { b.obj.position.y = (ceilingY - 18) + Math.sin(time * 0.8 + b.off) * 2; b.obj.rotation.z = Math.sin(time + b.off) * 0.1; }
-        });
-        if(!isInteracting && (move.x !== 0 || move.y !== 0)) { fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize(); rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize(); velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5)); }
-        velocity.multiplyScalar(0.9); camera.position.add(velocity);
-        camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
-        if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
-        document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
-        pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
-        iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
-        doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
-        cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
-        document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
-    }
-    boot();
+import * as THREE from 'three';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue, onDisconnect, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+const firebaseConfig = { apiKey: "AIzaSyDHJN7qXE0xaaOT39XCf_pbyeVQgNYoUeY", authDomain: "haaa-6f437.firebaseapp.com", databaseURL: "https://haaa-6f437-default-rtdb.firebaseio.com", projectId: "haaa-6f437", storageBucket: "haaa-6f437.firebasestorage.app", messagingSenderId: "59682444868", appId: "1:59682444868:web:b50f7e1cac94325d534e11", measurementId: "G-XQ6T8SH7K6" };
+const app = initializeApp(firebaseConfig); const db_fb = getDatabase(app);
+const myId = Math.random().toString(36).substr(2, 9);
+let myName = "Player", lastMoveTime = Date.now(), remotePlayers = {}, playerCount = 0;
+const DB_NAME = "INDU", STORE_NAME = "indu";
+let db = null;
+const initDB = () => new Promise((res) => {
+const req = indexedDB.open(DB_NAME, 2);
+req.onupgradeneeded = e => { let database = e.target.result; if (!database.objectStoreNames.contains(STORE_NAME)) database.createObjectStore(STORE_NAME); };
+req.onsuccess = e => { db = e.target.result; res(); };
+req.onerror = () => res();
+});
+const getCached = (key) => new Promise(res => { if (!db) return res(null); const tx = db.transaction(STORE_NAME, "readonly"); const req = tx.objectStore(STORE_NAME).get(key); req.onsuccess = () => res(req.result); req.onerror = () => res(null); });
+const saveCached = (key, blob) => new Promise(res => { if (!db) return res(); const tx = db.transaction(STORE_NAME, "readwrite"); tx.objectStore(STORE_NAME).put(blob, key); tx.oncomplete = () => res(); });
+const floorY = -50, T = 350, W = 1200, H = 1200, ceilingY = floorY + T;
+let isDoorOpen = false, isPowered = false, isInteracting = false;
+let velocity = new THREE.Vector3(), move = {x:0, y:0}, mixers = [];
+const clock = new THREE.Clock(); const scene = new THREE.Scene(); const cssScene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 7000);
+camera.rotation.order = 'YXZ';
+const cssRenderer = new CSS3DRenderer(); cssRenderer.setSize(window.innerWidth, window.innerHeight);
+cssRenderer.domElement.style.position = 'absolute'; cssRenderer.domElement.style.top = '0'; cssRenderer.domElement.style.zIndex = '1'; cssRenderer.domElement.style.pointerEvents = 'none';
+document.body.appendChild(cssRenderer.domElement);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .5;
+renderer.setClearColor(0x111111, 1); renderer.domElement.style.position = 'absolute'; renderer.domElement.style.top = '0'; renderer.domElement.style.zIndex = '2';
+document.body.appendChild(renderer.domElement);
+const pmremGenerator = new THREE.PMREMGenerator(renderer); scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+const ambLight = new THREE.AmbientLight(0xffffff, 0.1); scene.add(ambLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.1); dirLight.position.set(0, 300, 0); scene.add(dirLight);
+const texLoader = new THREE.TextureLoader(); const loader = new GLTFLoader(); const sharedPlaneGeom = new THREE.PlaneGeometry(1, 1);
+const textureCache = {}; const getTex = (url) => { if (!textureCache[url]) { textureCache[url] = texLoader.load(url); } return textureCache[url]; };
+const glbItems = [
+{ src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
+{ src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
+{ src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
+{ src: 'textured.glb', p: [1, 27, -385], r: [0, 0], s: [14, 14, 14] },
+{ src: 'tablecloth_lowpoly.glb', p: [-69, -35, -265], r: [0, 90], s: [90, 90, 90] },
+{ src: 'tablecloth_lowpoly.glb', p: [79, -35, -265], r: [0, 90], s: [90, 90, 90] },
+{ src: 'hamper1.glb', p: [-46, 20, -216], r: [0, 0], s: [11, 11, 11] },
+{ src: 'boqu.glb', p: [-41, 12, -380], r: [82, 176], s: [20, 20, 20] },
+{ src: 'bhat.glb', p: [48, 20, -374], r: [0, 0], s: [6, 6, 6] },
+{ src: 'glass.glb', p: [32, 15, -386], r: [0, 188], s: [9, 9, 9] },
+{ src: 'hbday.glb', p: [-9, 170, -560], r: [0, 0], s: [92, 92, 92] },
+{ src: 'indu.glb', p: [-18, 90, -578], r: [0, 6], s: [56, 56, 56] },
+{ src: 'gift_box.glb', p: [103, 9, -228], r: [0, 270], s: [18, 18, 18] },
+{ src: 'gift_box (1).glb', p: [79, 6, -231], r: [0, 0], s: [29, 29, 29] },
+{ src: 'gifts.glb', p: [56, 10, -216], r: [0, 0], s: [2, 2, 2] },
+{ src: 'teddy.glb', p: [95, 23, -312], r: [0, 0], s: [14, 14, 14] },
+{ src: 'muff.glb', p: [55, 14, -251], r: [0, 0], s: [21, 21, 21] },
+{ src: 'hamper 2.glb', p: [-76, 22, -242], r: [0, 0], s: [21, 21, 21] },
+{ src: 'lego_cake.glb', p: [-49, 54, -290], r: [0, 105], s: [75, 75, 75] },
+{ src: 'flowerframe .glb', p: [-589, 96, -173], r: [0, 90], s: [72, 72, 72] },
+{ src: 'flowerframe .glb_copy', p: [-589, 96, -432], r: [0, 90], s: [72, 72, 72] },
+{ src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
+{ src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
+];
+const staticItems = [
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -545], r: [270, 0], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, -545], r: [270, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, -177], r: [90, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, -177], r: [90, 0], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, -545], r: [270, 0], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, 189], r: [270, 0], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, 557], r: [90, 0], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, 189], r: [270, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [119, -46, 557], r: [90, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, 557], r: [270, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-249, -46, 189], r: [90, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, 189], r: [270, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, 557], r: [90, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, -177], r: [90, 180], s: [368, 368] },
+{ src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [-617, -46, -545], r: [270, 180], s: [368, 368] },
+{ src: '1.jpg', p: [573, 69, -477], r: [0, 115], s: [16, 20, 1] },
+{ src: '2.png', p: [573, 69, -435], r: [0, 104], s: [16, 20, 1] },
+{ src: '3.png', p: [573, 69, -401], r: [0, 74], s: [16, 20, 1] },
+{ src: '4.png', p: [556, 50, -469], r: [0, 116], s: [16, 20, 1] },
+{ src: '5.png', p: [573, 49, -453], r: [0, 117], s: [16, 20, 1] },
+{ src: '6.png', p: [568, 44, -437], r: [0, 114], s: [16, 20, 1] },
+{ src: '7.png', p: [561, 69, -459], r: [0, 100], s: [16, 20, 1] },
+{ src: '8.png', p: [585, 69, -449], r: [0, 80], s: [16, 20, 1] },
+{ src: '9.png', p: [585, -4, -481], r: [0, 104], s: [16, 20, 1] },
+{ src: '10.png', p: [585, 9, -491], r: [0, 107], s: [16, 20, 1] },
+{ src: '11.png', p: [595, 9, -476], r: [0, 110], s: [16, 20, 1] },
+{ src: '12.png', p: [590, 29, -488], r: [0, 126], s: [16, 20, 1] },
+{ src: '13.png', p: [579, 29, -469], r: [0, 109], s: [16, 20, 1] },
+{ src: '14.png', p: [591, 3, -459], r: [0, 108], s: [16, 20, 1] },
+{ src: '15.png', p: [586, 3, -441], r: [0, 116], s: [16, 20, 1] },
+{ src: '16.png', p: [573, 69, -377], r: [0, 115], s: [16, 20, 1] },
+{ src: '17.png', p: [573, 69, -335], r: [0, 104], s: [16, 20, 1] },
+{ src: '18.png', p: [573, 69, -301], r: [0, 74], s: [16, 20, 1] },
+{ src: '19.png', p: [556, 50, -369], r: [0, 116], s: [16, 20, 1] },
+{ src: '20.png', p: [573, 49, -353], r: [0, 117], s: [16, 20, 1] },
+{ src: '21.png', p: [568, 44, -337], r: [0, 114], s: [16, 20, 1] },
+{ src: '22.png', p: [561, 69, -359], r: [0, 100], s: [16, 20, 1] },
+{ src: '23.png', p: [585, 69, -349], r: [0, 80], s: [16, 20, 1] },
+{ src: '24.png', p: [585, -4, -381], r: [0, 104], s: [16, 20, 1] },
+{ src: '25.png', p: [585, 9, -391], r: [0, 107], s: [16, 20, 1] },
+{ src: '26.png', p: [595, 9, -376], r: [0, 110], s: [16, 20, 1] },
+{ src: '27.png', p: [590, 29, -388], r: [0, 126], s: [16, 20, 1] },
+{ src: '28.png', p: [579, 29, -369], r: [0, 109], s: [16, 20, 1] },
+{ src: '29.png', p: [591, 3, -359], r: [0, 108], s: [16, 20, 1] },
+{ src: '30.png', p: [586, 3, -341], r: [0, 116], s: [16, 20, 1] },
+{ src: '31.png', p: [573, 69, -277], r: [0, 115], s: [16, 20, 1] },
+{ src: '32.png', p: [573, 69, -235], r: [0, 104], s: [16, 20, 1] },
+{ src: '33.png', p: [573, 69, -201], r: [0, 74], s: [16, 20, 1] },
+{ src: '34.png', p: [556, 50, -269], r: [0, 116], s: [16, 20, 1] },
+{ src: '35.png', p: [573, 49, -253], r: [0, 117], s: [16, 20, 1] },
+{ src: '36.png', p: [568, 44, -237], r: [0, 114], s: [16, 20, 1] },
+{ src: '37.png', p: [561, 69, -259], r: [0, 100], s: [16, 20, 1] },
+{ src: '38.png', p: [585, 69, -249], r: [0, 80], s: [16, 20, 1] },
+{ src: '39.png', p: [585, -4, -281], r: [0, 104], s: [16, 20, 1] },
+{ src: '40.png', p: [585, 9, -291], r: [0, 107], s: [16, 20, 1] },
+{ src: '41.png', p: [595, 9, -276], r: [0, 110], s: [16, 20, 1] },
+{ src: '42.png', p: [590, 29, -288], r: [0, 126], s: [16, 20, 1] },
+{ src: '43.png', p: [579, 29, -269], r: [0, 109], s: [16, 20, 1] },
+{ src: '44.png', p: [591, 3, -259], r: [0, 108], s: [16, 20, 1] },
+{ src: '45.png', p: [586, 3, -241], r: [0, 116], s: [16, 20, 1] },
+{ src: '46.png', p: [573, 69, -177], r: [0, 115], s: [16, 20, 1] },
+{ src: '47.png', p: [573, 69, -135], r: [0, 104], s: [16, 20, 1] },
+{ src: '48.png', p: [573, 69, -101], r: [0, 74], s: [16, 20, 1] },
+{ src: '49.png', p: [556, 50, -169], r: [0, 116], s: [16, 20, 1] },
+{ src: '50.png', p: [573, 49, -153], r: [0, 117], s: [16, 20, 1] },
+{ src: '51.png', p: [568, 44, -137], r: [0, 114], s: [16, 20, 1] },
+{ src: '52.png', p: [561, 69, -159], r: [0, 100], s: [16, 20, 1] },
+{ src: '53.png', p: [585, 69, -149], r: [0, 80], s: [16, 20, 1] },
+{ src: '54.png', p: [585, -4, -181], r: [0, 104], s: [16, 20, 1] },
+{ src: '55.png', p: [585, 9, -191], r: [0, 107], s: [16, 20, 1] },
+{ src: '56.png', p: [595, 9, -176], r: [0, 110], s: [16, 20, 1] },
+{ src: '57.png', p: [590, 29, -188], r: [0, 126], s: [16, 20, 1] },
+{ src: '58.png', p: [579, 29, -169], r: [0, 109], s: [16, 20, 1] },
+{ src: '59.png', p: [591, 3, -159], r: [0, 108], s: [16, 20, 1] },
+{ src: '60.png', p: [586, 3, -141], r: [0, 116], s: [16, 20, 1] },
+{ src: '61.png', p: [573, 69, -77], r: [0, 115], s: [16, 20, 1] },
+{ src: '62.png', p: [573, 69, -35], r: [0, 104], s: [16, 20, 1] },
+{ src: '63.png', p: [573, 69, -1], r: [0, 74], s: [16, 20, 1] },
+{ src: '64.png', p: [556, 50, -69], r: [0, 116], s: [16, 20, 1] },
+{ src: '65.png', p: [573, 49, -53], r: [0, 117], s: [16, 20, 1] },
+{ src: '66.png', p: [568, 44, -37], r: [0, 114], s: [16, 20, 1] },
+{ src: '67.png', p: [561, 69, -59], r: [0, 100], s: [16, 20, 1] },
+{ src: '68.png', p: [585, 69, -49], r: [0, 80], s: [16, 20, 1] },
+{ src: '69.png', p: [585, -4, -81], r: [0, 104], s: [16, 20, 1] },
+{ src: '70.png', p: [585, 9, -91], r: [0, 107], s: [16, 20, 1] },
+{ src: '71.png', p: [595, 9, -76], r: [0, 110], s: [16, 20, 1] },
+{ src: '72.png', p: [590, 29, -88], r: [0, 126], s: [16, 20, 1] },
+{ src: '73.png', p: [579, 29, -69], r: [0, 109], s: [16, 20, 1] },
+{ src: '74.png', p: [591, 3, -59], r: [0, 108], s: [16, 20, 1] },
+{ src: '75.png', p: [586, 3, -41], r: [0, 116], s: [16, 20, 1] },
+{ src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [-599, 48, -306], r: [0, 90], s: [622, 582] },
+{ src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [599, 48, -306], r: [0, 90], s: [622, 582] },
+{ src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [599, 48, 319], r: [0, 90], s: [622, 582] },
+{ src: 'surface-with-abstract-watercolor-paint_23-2148733391 (1).jpg', p: [-599, 48, 318], r: [0, 90], s: [622, 582] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [598, 184, -599], r: [0, 0], s: [800, 589] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [-202, 184, -599], r: [0, 0], s: [800, 589] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [-449, 179, -9], r: [0, 0], s: [800, 589] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [449, 184, -9], r: [0, 0], s: [800, 589] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [49, 184, 0], r: [0, 90], s: [18, 679] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [2, 211, -8], r: [0, 0], s: [106, 173] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [2, 211, 8], r: [0, 0], s: [106, 173] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [449, 184, 9], r: [0, 0], s: [800, 589] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [-449, 179, 9], r: [0, 0], s: [800, 589] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [-49, 184, 0], r: [0, 90], s: [18, 679] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [598, 184, 599], r: [0, 0], s: [800, 589] },
+{ src: 'images - 2026-01-30T184744.639.jpeg', p: [-202, 184, 599], r: [0, 0], s: [800, 589] },
+{ src: '34.png', p: [573, 160, -577], r: [0, 115], s: [16, 20, 1] },
+{ src: '89.png', p: [573, 160, -535], r: [0, 104], s: [16, 20, 1] },
+{ src: '88.png', p: [573, 160, -501], r: [0, 74], s: [16, 20, 1] },
+{ src: '87.png', p: [556, 141, -569], r: [0, 116], s: [16, 20, 1] },
+{ src: '86.png', p: [573, 140, -553], r: [0, 117], s: [16, 20, 1] },
+{ src: '85.png', p: [568, 135, -537], r: [0, 114], s: [16, 20, 1] },
+{ src: '84.png', p: [561, 160, -559], r: [0, 100], s: [16, 20, 1] },
+{ src: '83.png', p: [585, 160, -549], r: [0, 80], s: [16, 20, 1] },
+{ src: '82.png', p: [585, 87, -581], r: [0, 104], s: [16, 20, 1] },
+{ src: '81.png', p: [585, 100, -591], r: [0, 107], s: [16, 20, 1] },
+{ src: '80.png', p: [595, 100, -576], r: [0, 110], s: [16, 20, 1] },
+{ src: '79.png', p: [590, 120, -588], r: [0, 126], s: [16, 20, 1] },
+{ src: '78.png', p: [579, 120, -569], r: [0, 109], s: [16, 20, 1] },
+{ src: '77.png', p: [591, 94, -559], r: [0, 108], s: [16, 20, 1] },
+{ src: '76.png', p: [586, 94, -541], r: [0, 116], s: [16, 20, 1] },
+{ src: '75.png', p: [573, 161, -477], r: [0, 115], s: [16, 20, 1] },
+{ src: '74.png', p: [573, 161, -435], r: [0, 104], s: [16, 20, 1] },
+{ src: '73.png', p: [573, 161, -401], r: [0, 74], s: [16, 20, 1] },
+{ src: '72.png', p: [556, 142, -469], r: [0, 116], s: [16, 20, 1] },
+{ src: '71.png', p: [573, 141, -453], r: [0, 117], s: [16, 20, 1] },
+{ src: '70.png', p: [568, 136, -437], r: [0, 114], s: [16, 20, 1] },
+{ src: '69.png', p: [561, 161, -459], r: [0, 100], s: [16, 20, 1] },
+{ src: '68.png', p: [585, 161, -449], r: [0, 80], s: [16, 20, 1] },
+{ src: '67.png', p: [585, 88, -481], r: [0, 104], s: [16, 20, 1] },
+{ src: '66.png', p: [585, 101, -491], r: [0, 107], s: [16, 20, 1] },
+{ src: '65.png', p: [595, 101, -476], r: [0, 110], s: [16, 20, 1] },
+{ src: '64.png', p: [590, 121, -488], r: [0, 126], s: [16, 20, 1] },
+{ src: '63.png', p: [579, 121, -469], r: [0, 109], s: [16, 20, 1] },
+{ src: '62.png', p: [591, 95, -459], r: [0, 108], s: [16, 20, 1] },
+{ src: '61.png', p: [586, 95, -441], r: [0, 116], s: [16, 20, 1] },
+{ src: '60.png', p: [573, 161, -377], r: [0, 115], s: [16, 20, 1] },
+{ src: '59.png', p: [573, 161, -335], r: [0, 104], s: [16, 20, 1] },
+{ src: '58.png', p: [573, 161, -301], r: [0, 74], s: [16, 20, 1] },
+{ src: '57.png', p: [556, 142, -369], r: [0, 116], s: [16, 20, 1] },
+{ src: '56.png', p: [573, 141, -353], r: [0, 117], s: [16, 20, 1] },
+{ src: '55.png', p: [568, 136, -337], r: [0, 114], s: [16, 20, 1] },
+{ src: '54.png', p: [561, 161, -359], r: [0, 100], s: [16, 20, 1] },
+{ src: '53.png', p: [585, 161, -349], r: [0, 80], s: [16, 20, 1] },
+{ src: '52.png', p: [585, 88, -381], r: [0, 104], s: [16, 20, 1] },
+{ src: '51.png', p: [585, 101, -391], r: [0, 107], s: [16, 20, 1] },
+{ src: '50.png', p: [595, 101, -376], r: [0, 110], s: [16, 20, 1] },
+{ src: '49.png', p: [590, 121, -388], r: [0, 126], s: [16, 20, 1] },
+{ src: '48.png', p: [579, 121, -369], r: [0, 109], s: [16, 20, 1] },
+{ src: '47.png', p: [591, 95, -359], r: [0, 108], s: [16, 20, 1] },
+{ src: '46.png', p: [586, 95, -341], r: [0, 116], s: [16, 20, 1] },
+{ src: '45.png', p: [573, 161, -277], r: [0, 115], s: [16, 20, 1] },
+{ src: '44.png', p: [573, 161, -235], r: [0, 104], s: [16, 20, 1] },
+{ src: '43.png', p: [573, 161, -201], r: [0, 74], s: [16, 20, 1] },
+{ src: '42.png', p: [556, 142, -269], r: [0, 116], s: [16, 20, 1] },
+{ src: '41.png', p: [573, 141, -253], r: [0, 117], s: [16, 20, 1] },
+{ src: '40.png', p: [568, 136, -237], r: [0, 114], s: [16, 20, 1] },
+{ src: '39.png', p: [561, 161, -259], r: [0, 100], s: [16, 20, 1] },
+{ src: '38.png', p: [585, 161, -249], r: [0, 80], s: [16, 20, 1] },
+{ src: '37.png', p: [585, 88, -281], r: [0, 104], s: [16, 20, 1] },
+{ src: '36.png', p: [585, 101, -291], r: [0, 107], s: [16, 20, 1] },
+{ src: '35.png', p: [595, 101, -276], r: [0, 110], s: [16, 20, 1] },
+{ src: '34.png', p: [590, 121, -288], r: [0, 126], s: [16, 20, 1] },
+{ src: '33.png', p: [579, 121, -269], r: [0, 109], s: [16, 20, 1] },
+{ src: '32.png', p: [591, 95, -259], r: [0, 108], s: [16, 20, 1] },
+{ src: '31.png', p: [586, 95, -241], r: [0, 116], s: [16, 20, 1] },
+{ src: '30.png', p: [573, 161, -177], r: [0, 115], s: [16, 20, 1] },
+{ src: '29.png', p: [573, 161, -135], r: [0, 104], s: [16, 20, 1] },
+{ src: '28.png', p: [573, 161, -101], r: [0, 74], s: [16, 20, 1] },
+{ src: '27.png', p: [556, 142, -169], r: [0, 116], s: [16, 20, 1] },
+{ src: '26.png', p: [573, 141, -153], r: [0, 117], s: [16, 20, 1] },
+{ src: '25.png', p: [568, 136, -137], r: [0, 114], s: [16, 20, 1] },
+{ src: '24.png', p: [561, 161, -159], r: [0, 100], s: [16, 20, 1] },
+{ src: '23.png', p: [585, 161, -149], r: [0, 80], s: [16, 20, 1] },
+{ src: '22.png', p: [585, 88, -181], r: [0, 104], s: [16, 20, 1] },
+{ src: '21.png', p: [585, 101, -191], r: [0, 107], s: [16, 20, 1] },
+{ src: '20.png', p: [595, 101, -176], r: [0, 110], s: [16, 20, 1] },
+{ src: '19.png', p: [590, 121, -188], r: [0, 126], s: [16, 20, 1] },
+{ src: '18.png', p: [579, 121, -169], r: [0, 109], s: [16, 20, 1] },
+{ src: '17.png', p: [591, 95, -159], r: [0, 108], s: [16, 20, 1] },
+{ src: '16.png', p: [586, 95, -141], r: [0, 116], s: [16, 20, 1] },
+{ src: '15.png', p: [573, 161, -77], r: [0, 115], s: [16, 20, 1] },
+{ src: '14.png', p: [573, 161, -35], r: [0, 104], s: [16, 20, 1] },
+{ src: '13.png', p: [573, 161, -1], r: [0, 74], s: [16, 20, 1] },
+{ src: '12.png', p: [556, 142, -69], r: [0, 116], s: [16, 20, 1] },
+{ src: '11.png', p: [573, 141, -53], r: [0, 117], s: [16, 20, 1] },
+{ src: '10.png', p: [568, 136, -37], r: [0, 114], s: [16, 20, 1] },
+{ src: '9.png', p: [561, 161, -59], r: [0, 100], s: [16, 20, 1] },
+{ src: '8.png', p: [585, 161, -49], r: [0, 80], s: [16, 20, 1] },
+{ src: '7.png', p: [585, 88, -81], r: [0, 104], s: [16, 20, 1] },
+{ src: '6.png', p: [585, 101, -91], r: [0, 107], s: [16, 20, 1] },
+{ src: '5.png', p: [595, 101, -76], r: [0, 110], s: [16, 20, 1] },
+{ src: '4.png', p: [590, 121, -88], r: [0, 126], s: [16, 20, 1] },
+{ src: '3.png', p: [579, 121, -69], r: [0, 109], s: [16, 20, 1] },
+{ src: '2.png', p: [591, 95, -59], r: [0, 108], s: [16, 20, 1] },
+{ src: '1.jpg', p: [586, 95, -41], r: [0, 116], s: [16, 20, 1] },
+{ src: 'IMG-20260131-WA0003.jpg', p: [-3, 13, -403], r: [90, 360], s: [26, 26, 1] },
+{ src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [16, 20, 1] }
+];
+const createChar = (name) => {
+const g = new THREE.Group();
+const body = new THREE.Mesh(new THREE.CapsuleGeometry(10, 20, 4, 8), new THREE.MeshStandardMaterial({color: 0xff69b4}));
+const eyeG = new THREE.SphereGeometry(2, 8, 8); const eyeM = new THREE.MeshBasicMaterial({color: 0x000});
+const e1 = new THREE.Mesh(eyeG, eyeM); e1.position.set(4, 10, 8); body.add(e1);
+const e2 = new THREE.Mesh(eyeG, eyeM); e2.position.set(-4, 10, 8); body.add(e2);
+g.add(body);
+const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
+const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(name, 128, 45);
+const tex = new THREE.CanvasTexture(canvas); const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: tex}));
+sprite.position.y = 35; sprite.scale.set(40, 10, 1); g.add(sprite);
+g.userData = { e1, e2, blinkTimer: 0 }; return g;
+};
+async function boot() {
+await initDB(); const statsText = document.getElementById('loader-stats'); const progressBar = document.getElementById('progress-bar'); const msgText = document.getElementById('loader-msg');
+let loadedCount = 0, totalMB = 0;
+for (let item of glbItems) {
+let blob = await getCached(item.src); if (!blob) { msgText.innerText = `Fetching: ${item.src}`; const res = await fetch(item.src); blob = await res.blob(); await saveCached(item.src, blob); }
+if(blob) totalMB += (blob.size / (1024 * 1024)); loadedCount++; statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`; progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
+if(blob) {
+const url = URL.createObjectURL(blob); loader.load(url, (gltf) => {
+const model = gltf.scene; model.traverse(node => { if (node.isMesh && node.material) { if (item.src === 'indu.glb' || item.src === 'hbday.glb') { node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0; } else { node.material.metalness = 0.0; node.material.roughness = 0.8; } } });
+model.position.set(item.p[0], item.p[1], item.p[2]); model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0); model.scale.set(item.s[0], item.s[1], item.s[2]);
+if (gltf.animations.length > 0) { const mixer = new THREE.AnimationMixer(model); gltf.animations.forEach(clip => mixer.clipAction(clip).play()); mixers.push(mixer); }
+scene.add(model); URL.revokeObjectURL(url);
+});
+}
+}
+staticItems.forEach(d => { const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true })); m.position.set(d.p[0], d.p[1], d.p[2]); m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); m.scale.set(d.s[0], d.s[1], 1); scene.add(m); });
+setTimeout(() => { document.getElementById('loader-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('loader-screen').style.display = 'none'; document.getElementById('name-prompt').style.display='flex'; }, 500); }, 1500);
+}
+document.getElementById('name-confirm').onclick = () => {
+const val = document.getElementById('name-input').value.trim(); if(!val) return; myName = val; document.getElementById('name-prompt').style.display='none';
+set(ref(db_fb, 'players/' + myId), { name: myName, pos: {x:0, y:50, z:400}, rot: 0, time: serverTimestamp() });
+onDisconnect(ref(db_fb, 'players/' + myId)).remove(); animate();
+onValue(ref(db_fb, 'players'), (snap) => {
+const data = snap.val() || {}; playerCount = Object.keys(data).length; document.getElementById('player-count').innerText = `Players: ${playerCount}/2`;
+for(let id in data) { if(id === myId) continue;
+if(!remotePlayers[id]) { remotePlayers[id] = createChar(data[id].name); scene.add(remotePlayers[id]); }
+remotePlayers[id].position.set(data[id].pos.x, floorY+20, data[id].pos.z); remotePlayers[id].rotation.y = data[id].rot;
+}
+for(let id in remotePlayers) { if(!data[id]) { scene.remove(remotePlayers[id]); delete remotePlayers[id]; } }
+});
+};
+const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
+box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333"); box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333"); box(100, T-180, 15, 0, floorY+260, 0, "#333"); const doorMesh = box(100, 180, 8, 0, floorY + 90, 0, "#111");
+const frameEl = document.getElementById('html-frame-element'); const cssObj = new CSS3DObject(frameEl); cssObj.position.set(-585, floorY + 150, -300); cssObj.rotation.y = Math.PI/2; cssObj.scale.set(0.15, 0.15, 0.15); cssScene.add(cssObj);
+const occMesh = new THREE.Mesh(new THREE.PlaneGeometry(1280, 720), new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0, blending: THREE.NoBlending })); occMesh.position.copy(cssObj.position); occMesh.rotation.copy(cssObj.rotation); occMesh.scale.copy(cssObj.scale); scene.add(occMesh);
+let joyId = null, lookId = null, lastL = {x:0, y:0}, joySt = {x:0, y:0};
+const zMove = document.getElementById('zone-move'), joyS = document.getElementById('joy-stick'), joyC = document.getElementById('joy-container');
+zMove.addEventListener('touchstart', e => { if(isInteracting) return; const t = e.changedTouches[0]; joyId = t.identifier; joySt = {x:t.clientX, y:t.clientY}; lastMoveTime = Date.now(); });
+zMove.addEventListener('touchmove', e => { if(isInteracting) return; for(let t of e.changedTouches) if(t.identifier === joyId) { let dx = t.clientX-joySt.x, dy = t.clientY-joySt.y; const d = Math.min(Math.sqrt(dx*dx+dy*dy), 35), a = Math.atan2(dy, dx); joyS.style.transform = `translate(calc(-50% + ${Math.cos(a)*d}px), calc(-50% + ${Math.sin(a)*d}px))`; move = {x: Math.cos(a)*d/35, y: Math.sin(a)*d/35}; lastMoveTime = Date.now(); } });
+zMove.addEventListener('touchend', () => { joyId=null; move={x:0,y:0}; joyS.style.transform = 'translate(-50%, -50%)'; });
+window.addEventListener('touchstart', e => { if(e.target.closest('.action-btn')) return; const t = e.changedTouches[0]; if (t.identifier === joyId) return; lookId = t.identifier; lastL = {x:t.clientX, y:t.clientY}; lastMoveTime = Date.now(); }, { passive: false });
+window.addEventListener('touchmove', e => { for(let t of e.changedTouches) { if(t.identifier === lookId) { camera.rotation.y -= (t.clientX - lastL.x) * 0.0035; camera.rotation.x -= (t.clientY - lastL.y) * 0.0035; camera.rotation.x = Math.max(-1.4, Math.min(1.4, camera.rotation.x)); lastL = {x: t.clientX, y: t.clientY}; lastMoveTime = Date.now(); } } }, { passive: false });
+window.addEventListener('touchend', e => { for(let t of e.changedTouches) if(t.identifier === lookId) lookId = null; });
+const iBtn = document.getElementById('interact-btn'), pBtn = document.getElementById('power-btn'), dBtn = document.getElementById('door-btn');
+dBtn.onclick = () => { if(playerCount >= 2) isDoorOpen = !isDoorOpen; else alert("Need 2 players to open!"); };
+pBtn.onclick = () => { isPowered = !isPowered; document.getElementById('totify-iframe').src = isPowered ? "https://impraveen07.github.io/Win7/" : ""; frameEl.style.display = isPowered ? 'block' : 'none'; pBtn.innerText = isPowered ? "🔌 POWER OFF" : "🔌 POWER ON"; pBtn.style.background = isPowered ? "#dc3545" : "#222"; };
+iBtn.onclick = () => { isInteracting = !isInteracting; if(isInteracting) { cssRenderer.domElement.style.zIndex='999'; cssRenderer.domElement.style.pointerEvents='auto'; renderer.domElement.style.zIndex='1'; joyC.style.display = 'none'; document.getElementById('touch-blocker').style.display='none'; iBtn.innerText="🔒 EXIT INTERACT"; iBtn.style.background="#dc3545"; } else { renderer.domElement.style.zIndex='2'; cssRenderer.domElement.style.zIndex='1'; cssRenderer.domElement.style.pointerEvents='none'; joyC.style.display = 'block'; document.getElementById('touch-blocker').style.display='block'; iBtn.innerText="🎯 INTERACT"; iBtn.style.background="#007bff"; move={x:0,y:0}; } };
+camera.position.set(0, 50, 400); const fVec = new THREE.Vector3(), rVec = new THREE.Vector3();
+let surpriseTriggered = false, fadeLight = false; const poppers = [], balloons = [], popColors = [0xff69b4, 0xffb3d9, 0xff1493, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff, 0xffa500];
+function triggerParty() {
+fadeLight = true; const stripGeo = new THREE.PlaneGeometry(8, 3), squareGeo = new THREE.PlaneGeometry(5, 5), dotGeo = new THREE.CircleGeometry(3, 8);
+for(let i=0; i<800; i++) { const geos = [stripGeo, squareGeo, dotGeo]; const m = new THREE.Mesh(geos[Math.floor(Math.random()*3)], new THREE.MeshBasicMaterial({color: popColors[Math.floor(Math.random()*popColors.length)], side:2})); m.position.set((Math.random()-0.5)*900, 330, -100 - Math.random()*500); scene.add(m); poppers.push({ mesh: m, vel: new THREE.Vector3((Math.random()-0.5)*3.5, - (Math.random()*1.8 + 1.2), (Math.random()-0.5)*3.5), rot: new THREE.Vector3(Math.random()*0.2, Math.random()*0.2, 0) }); }
+for(let i=0; i<40; i++) { const bGrp = new THREE.Group(); const bGeo = new THREE.SphereGeometry(14, 20, 20); bGeo.scale(1, 1.3, 1); const bMesh = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({ color: popColors[Math.floor(Math.random()*popColors.length)], metalness: 0.1, roughness: 0.1, transparent: true, opacity: 0.9 })); const knot = new THREE.Mesh(new THREE.ConeGeometry(3, 4, 8), bMesh.material); knot.position.y = -18; knot.rotation.x = Math.PI; bMesh.add(knot); bGrp.add(bMesh); bGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -18, 0), new THREE.Vector3(0, -120, 0)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }))); bGrp.position.set((Math.random()-0.5)*700, floorY - 50, -100 - Math.random()*500); scene.add(bGrp); balloons.push({ obj: bGrp, speed: 1.5 + Math.random() * 2, off: Math.random() * 100, atCeiling: false }); }
+}
+function animate() {
+requestAnimationFrame(animate); const delta = clock.getDelta(), time = Date.now() * 0.001; mixers.forEach(m => m.update(delta));
+if(Date.now() - lastMoveTime > 15000) { remove(ref(db_fb, 'players/' + myId)); location.reload(); return; }
+if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) { surpriseTriggered = true; triggerParty(); }
+if(fadeLight) { ambLight.intensity += (1.4 - ambLight.intensity) * 0.05; dirLight.intensity += (2.5 - dirLight.intensity) * 0.05; }
+poppers.forEach(p => { if(p.mesh.position.y > floorY + 2) { p.mesh.position.add(p.vel); p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y; } });
+balloons.forEach(b => { if(!b.atCeiling) { b.obj.position.y += b.speed; b.obj.position.x += Math.sin(time + b.off) * 0.3; if(b.obj.position.y >= ceilingY - 18) b.atCeiling = true; } else { b.obj.position.y = (ceilingY - 18) + Math.sin(time * 0.8 + b.off) * 2; b.obj.rotation.z = Math.sin(time + b.off) * 0.1; } });
+if(!isInteracting && (move.x !== 0 || move.y !== 0)) { fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize(); rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize(); velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5)); }
+velocity.multiplyScalar(0.9); camera.position.add(velocity); camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
+if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
+update(ref(db_fb, 'players/' + myId), { pos: {x:camera.position.x, y:camera.position.y, z:camera.position.z}, rot: camera.rotation.y });
+for(let id in remotePlayers) { const p = remotePlayers[id]; p.userData.blinkTimer -= delta; if(p.userData.blinkTimer <= 0) { const s = Math.random() > 0.5 ? 0.1 : 1; p.userData.e1.scale.y = s; p.userData.e2.scale.y = s; if(s === 0.1) p.userData.blinkTimer = 0.12; else p.userData.blinkTimer = 2 + Math.random() * 3; } }
+document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
+pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
+iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
+doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
+cssRenderer.render(cssScene, camera); renderer.render(scene, camera); document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
+}
+boot();
 </script>
 </body>
 </html>
