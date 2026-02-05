@@ -128,6 +128,68 @@ const glbItems = [
 { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
 { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
 ];
+          async function boot() {
+        await initDB();
+        const statsText = document.getElementById('loader-stats');
+        const progressBar = document.getElementById('progress-bar');
+        const msgText = document.getElementById('loader-msg');
+        let loadedCount = 0, totalMB = 0;
+
+        // 1. Load GLB Models
+        for (let item of glbItems) {
+            let blob = await getCached(item.src);
+            if (!blob) {
+                msgText.innerText = `Fetching: ${item.src}`;
+                const res = await fetch(item.src); blob = await res.blob();
+                await saveCached(item.src, blob);
+            }
+            if(blob) totalMB += (blob.size / (1024 * 1024));
+            loadedCount++;
+            statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
+            progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
+            if(blob) {
+                const url = URL.createObjectURL(blob);
+                loader.load(url, (gltf) => {
+                    const model = gltf.scene;
+                    model.traverse(node => {
+                        if (node.isMesh && node.material) {
+                            if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
+                                node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0;
+                            } else { node.material.metalness = 0.0; node.material.roughness = 0.8; }
+                        }
+                    });
+                    model.position.set(item.p[0], item.p[1], item.p[2]);
+                    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
+                    model.scale.set(item.s[0], item.s[1], item.s[2]);
+                    if (gltf.animations.length > 0) {
+                        const mixer = new THREE.AnimationMixer(model);
+                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                        mixers.push(mixer);
+                    }
+                    scene.add(model); URL.revokeObjectURL(url);
+                });
+            }
+        }
+
+        // 2. Load Static Image Planes
+        staticItems.forEach(d => {
+            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
+            m.position.set(d.p[0], d.p[1], d.p[2]); 
+            m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
+            m.scale.set(d.s[0], d.s[1], 1);
+            scene.add(m);
+        });
+
+        // 3. Hide Loader
+        setTimeout(() => { 
+            document.getElementById('loader-screen').style.opacity = '0'; 
+            setTimeout(() => { 
+                document.getElementById('loader-screen').style.display = 'none'; 
+                animate(); 
+            }, 500); 
+        }, 1500);
+    } // End of boot function
+
 const staticItems = [
 { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -177], r: [90, 0], s: [368, 368] },
 { src: 'Picsart_26-01-08_18-59-32-352.jpg', p: [487, -46, -545], r: [270, 0], s: [368, 368] },
