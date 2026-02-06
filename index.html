@@ -67,17 +67,30 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue, onChildAdded, onChildRemoved, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const app = initializeApp(firebaseConfig); // Uses your firebaseConfig object
+const firebaseConfig = {
+  apiKey: "AIzaSyDHJN7qXE0xaaOT39XCf_pbyeVQgNYoUeY",
+  authDomain: "haaa-6f437.firebaseapp.com",
+  databaseURL: "https://haaa-6f437-default-rtdb.firebaseio.com",
+  projectId: "haaa-6f437",
+  storageBucket: "haaa-6f437.firebasestorage.app",
+  messagingSenderId: "59682444868",
+  appId: "1:59682444868:web:b50f7e1cac94325d534e11",
+  measurementId: "G-XQ6T8SH7K6"
+};
+
+// INITIALIZE APP (Crucial step)
+const app = initializeApp(firebaseConfig); 
 const db_fb = getDatabase(app);
-const playerId = Math.random().toString(36).substring(7); // Unique ID for you
+
+const playerId = Math.random().toString(36).substring(7);
 const playerRef = ref(db_fb, `players/${playerId}`);
 const playersRef = ref(db_fb, 'players');
 
-let otherPlayers = {}; // Stores other users' capsules
+let otherPlayers = {}; 
 let lastMoveTime = Date.now();
-const AFK_TIMEOUT = 45000; // 45 seconds
+const AFK_TIMEOUT = 45000; 
 
-// Function to create the floating capsule for other players
+// This function is great, keep it!
 function createPlayerMesh() {
     const group = new THREE.Group();
     const capGeo = new THREE.CapsuleGeometry(8, 15, 4, 8);
@@ -86,7 +99,7 @@ function createPlayerMesh() {
         emissive: new THREE.Color(0x222222)
     });
     const mesh = new THREE.Mesh(capGeo, material);
-    mesh.position.y = 25; // Floating height
+    mesh.position.y = 25; 
     group.add(mesh);
     return group;
 }
@@ -259,13 +272,21 @@ const glbItems = [
         if (otherPlayers[snapshot.key]) { scene.remove(otherPlayers[snapshot.key]); delete otherPlayers[snapshot.key]; }
     });
     onValue(playersRef, (snapshot) => {
-        const data = snapshot.val();
-        for (let id in data) {
-            if (id !== playerId && otherPlayers[id]) {
-                otherPlayers[id].position.lerp(new THREE.Vector3(data[id].x, data[id].y - 40, data[id].z), 0.2);
+    const data = snapshot.val();
+    for (let id in data) {
+        if (id !== playerId) {
+            // Create mesh if it doesn't exist yet
+            if (!otherPlayers[id]) {
+                const group = new THREE.Group();
+                const cap = new THREE.Mesh(new THREE.CapsuleGeometry(8, 12, 4, 8), new THREE.MeshStandardMaterial({ color: 0xff69b4 }));
+                cap.position.y = 20; group.add(cap);
+                scene.add(group); otherPlayers[id] = group;
             }
+            // Move mesh
+            otherPlayers[id].position.lerp(new THREE.Vector3(data[id].x, data[id].y - 40, data[id].z), 0.2);
         }
-    });
+    }
+});
 
     // 3. Hide Loader
     setTimeout(() => { 
