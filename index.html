@@ -63,6 +63,34 @@
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module">
+    // --- 1. FIREBASE CONFIG & SYNC SETUP ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue, onChildAdded, onChildRemoved, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const app = initializeApp(firebaseConfig); // Uses your firebaseConfig object
+const db_fb = getDatabase(app);
+const playerId = Math.random().toString(36).substring(7); // Unique ID for you
+const playerRef = ref(db_fb, `players/${playerId}`);
+const playersRef = ref(db_fb, 'players');
+
+let otherPlayers = {}; // Stores other users' capsules
+let lastMoveTime = Date.now();
+const AFK_TIMEOUT = 45000; // 45 seconds
+
+// Function to create the floating capsule for other players
+function createPlayerMesh() {
+    const group = new THREE.Group();
+    const capGeo = new THREE.CapsuleGeometry(8, 15, 4, 8);
+    const material = new THREE.MeshStandardMaterial({ 
+        color: new THREE.Color(`hsl(${Math.random() * 360}, 80%, 60%)`),
+        emissive: new THREE.Color(0x222222)
+    });
+    const mesh = new THREE.Mesh(capGeo, material);
+    mesh.position.y = 25; // Floating height
+    group.add(mesh);
+    return group;
+}
+
     import * as THREE from 'three';
     import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -167,66 +195,87 @@ const glbItems = [
         { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
 ];
         async function boot() {
-        await initDB();
-        const statsText = document.getElementById('loader-stats');
-        const progressBar = document.getElementById('progress-bar');
-        const msgText = document.getElementById('loader-msg');
-        let loadedCount = 0, totalMB = 0;
+    await initDB();
+    const statsText = document.getElementById('loader-stats');
+    const progressBar = document.getElementById('progress-bar');
+    const msgText = document.getElementById('loader-msg');
+    let loadedCount = 0, totalMB = 0;
 
-        // 1. Load GLB Models
-        for (let item of glbItems) {
-            let blob = await getCached(item.src);
-            if (!blob) {
-                msgText.innerText = `Fetching: ${item.src}`;
-                const res = await fetch(item.src); blob = await res.blob();
-                await saveCached(item.src, blob);
-            }
-            if(blob) totalMB += (blob.size / (1024 * 1024));
-            loadedCount++;
-            statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
-            progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
-            if(blob) {
-                const url = URL.createObjectURL(blob);
-                loader.load(url, (gltf) => {
-                    const model = gltf.scene;
-                    model.traverse(node => {
-                        if (node.isMesh && node.material) {
-                            if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
-                                node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0;
-                            } else { node.material.metalness = 0.0; node.material.roughness = 0.8; }
-                        }
-                    });
-                    model.position.set(item.p[0], item.p[1], item.p[2]);
-                    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
-                    model.scale.set(item.s[0], item.s[1], item.s[2]);
-                    if (gltf.animations.length > 0) {
-                        const mixer = new THREE.AnimationMixer(model);
-                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-                        mixers.push(mixer);
+    // 1. Load GLB Models (STRICTLY SAME)
+    for (let item of glbItems) {
+        let blob = await getCached(item.src);
+        if (!blob) {
+            msgText.innerText = `Fetching: ${item.src}`;
+            const res = await fetch(item.src); blob = await res.blob();
+            await saveCached(item.src, blob);
+        }
+        if(blob) totalMB += (blob.size / (1024 * 1024));
+        loadedCount++;
+        statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
+        progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
+        if(blob) {
+            const url = URL.createObjectURL(blob);
+            loader.load(url, (gltf) => {
+                const model = gltf.scene;
+                model.traverse(node => {
+                    if (node.isMesh && node.material) {
+                        if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
+                            node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0;
+                        } else { node.material.metalness = 0.0; node.material.roughness = 0.8; }
                     }
-                    scene.add(model); URL.revokeObjectURL(url);
                 });
+                model.position.set(item.p[0], item.p[1], item.p[2]);
+                model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
+                model.scale.set(item.s[0], item.s[1], item.s[2]);
+                if (gltf.animations.length > 0) {
+                    const mixer = new THREE.AnimationMixer(model);
+                    gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                    mixers.push(mixer);
+                }
+                scene.add(model); URL.revokeObjectURL(url);
+            });
+        }
+    }
+
+    // 2. Load Static Image Planes (STRICTLY SAME)
+    staticItems.forEach(d => {
+        const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
+        m.position.set(d.p[0], d.p[1], d.p[2]); 
+        m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
+        m.scale.set(d.s[0], d.s[1], 1);
+        scene.add(m);
+    });
+
+    // --- NEW MULTIPLAYER LOGIC ADDED HERE ---
+    onDisconnect(playerRef).remove();
+    onChildAdded(playersRef, (snapshot) => {
+        if (snapshot.key === playerId) return;
+        const group = new THREE.Group();
+        const cap = new THREE.Mesh(new THREE.CapsuleGeometry(8, 12, 4, 8), new THREE.MeshStandardMaterial({ color: new THREE.Color(`hsl(${Math.random() * 360}, 70%, 50%)`) }));
+        cap.position.y = 20; group.add(cap);
+        scene.add(group); otherPlayers[snapshot.key] = group;
+    });
+    onChildRemoved(playersRef, (snapshot) => {
+        if (otherPlayers[snapshot.key]) { scene.remove(otherPlayers[snapshot.key]); delete otherPlayers[snapshot.key]; }
+    });
+    onValue(playersRef, (snapshot) => {
+        const data = snapshot.val();
+        for (let id in data) {
+            if (id !== playerId && otherPlayers[id]) {
+                otherPlayers[id].position.lerp(new THREE.Vector3(data[id].x, data[id].y - 40, data[id].z), 0.2);
             }
         }
+    });
 
-        // 2. Load Static Image Planes
-        staticItems.forEach(d => {
-            const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
-            m.position.set(d.p[0], d.p[1], d.p[2]); 
-            m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
-            m.scale.set(d.s[0], d.s[1], 1);
-            scene.add(m);
-        });
-
-        // 3. Hide Loader
+    // 3. Hide Loader
+    setTimeout(() => { 
+        document.getElementById('loader-screen').style.opacity = '0'; 
         setTimeout(() => { 
-            document.getElementById('loader-screen').style.opacity = '0'; 
-            setTimeout(() => { 
-                document.getElementById('loader-screen').style.display = 'none'; 
-                animate(); 
-            }, 500); 
-        }, 1500);
-    } // End of boot function
+            document.getElementById('loader-screen').style.display = 'none'; 
+            animate(); 
+        }, 500); 
+    }, 1500);
+}
 
     const staticItems = [
                // --- LARGE STRUCTURES & WALLS ---
@@ -558,27 +607,48 @@ const glbItems = [
     }
 
     function animate() {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta(), time = Date.now() * 0.001;
-        mixers.forEach(m => m.update(delta));
-        if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) { surpriseTriggered = true; triggerParty(); }
-        if(fadeLight) { ambLight.intensity += (1.4 - ambLight.intensity) * 0.05; dirLight.intensity += (2.5 - dirLight.intensity) * 0.05; }
-        poppers.forEach(p => { if(p.mesh.position.y > floorY + 2) { p.mesh.position.add(p.vel); p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y; } });
-        balloons.forEach(b => { 
-            if(!b.atCeiling) { b.obj.position.y += b.speed; b.obj.position.x += Math.sin(time + b.off) * 0.3; if(b.obj.position.y >= ceilingY - 18) b.atCeiling = true; } 
-            else { b.obj.position.y = (ceilingY - 18) + Math.sin(time * 0.8 + b.off) * 2; b.obj.rotation.z = Math.sin(time + b.off) * 0.1; }
-        });
-        if(!isInteracting && (move.x !== 0 || move.y !== 0)) { fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize(); rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize(); velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5)); }
-        velocity.multiplyScalar(0.9); camera.position.add(velocity);
-        camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
-        if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
-        document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
-        pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
-        iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
-        doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
-        cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
-        document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta(), time = Date.now() * 0.001;
+    mixers.forEach(m => m.update(delta));
+    
+    // --- MULTIPLAYER & AFK LOGIC ---
+    if(!isInteracting && (move.x !== 0 || move.y !== 0)) { 
+        lastMoveTime = Date.now(); // Reset AFK
+        fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize(); 
+        rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize(); 
+        velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5)); 
+        
+        // Update Firebase
+        set(playerRef, { id: playerId, x: camera.position.x, y: camera.position.y, z: camera.position.z });
     }
+
+    if (Date.now() - lastMoveTime > 45000) {
+        alert("Kicked for AFK");
+        set(playerRef, null);
+        window.location.reload();
+        return;
+    }
+    // --- END MULTIPLAYER LOGIC ---
+
+    // [STRICTLY KEEP ALL YOUR ORIGINAL ANIMATION CODE BELOW...]
+    if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) { surpriseTriggered = true; triggerParty(); }
+    if(fadeLight) { ambLight.intensity += (1.4 - ambLight.intensity) * 0.05; dirLight.intensity += (2.5 - dirLight.intensity) * 0.05; }
+    poppers.forEach(p => { if(p.mesh.position.y > floorY + 2) { p.mesh.position.add(p.vel); p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y; } });
+    balloons.forEach(b => { 
+        if(!b.atCeiling) { b.obj.position.y += b.speed; b.obj.position.x += Math.sin(time + b.off) * 0.3; if(b.obj.position.y >= ceilingY - 18) b.atCeiling = true; } 
+        else { b.obj.position.y = (ceilingY - 18) + Math.sin(time * 0.8 + b.off) * 2; b.obj.rotation.z = Math.sin(time + b.off) * 0.1; }
+    });
+    velocity.multiplyScalar(0.9); camera.position.add(velocity);
+    camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
+    if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
+    document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
+    pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
+    iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
+    doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
+    cssRenderer.render(cssScene, camera); renderer.render(scene, camera); 
+    document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
+}
+
     boot();
 </script>
 </body>
