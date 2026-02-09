@@ -57,7 +57,8 @@
 
 <div id="html-frame-element" style="display:none;">
     <div id="touch-blocker"></div>
-    <iframe id="totify-iframe"></iframe>
+    <iframe id="totify-iframe" allow="microphone"></iframe>
+
 </div>
 
 
@@ -582,13 +583,29 @@ const glbItems = [
 
     const iBtn = document.getElementById('interact-btn'), pBtn = document.getElementById('power-btn');
     document.getElementById('door-btn').onclick = () => isDoorOpen = !isDoorOpen;
-    pBtn.onclick = () => { 
-        isPowered = !isPowered; 
-        document.getElementById('totify-iframe').src = isPowered ? "https://impraveen07.github.io/Win7/" : ""; 
-        frameEl.style.display = isPowered ? 'block' : 'none'; 
-        pBtn.innerText = isPowered ? "🔌 POWER OFF" : "🔌 POWER ON"; 
-        pBtn.style.background = isPowered ? "#dc3545" : "#222"; 
-    };
+    pBtn.onclick = async () => { // Added 'async' here
+    isPowered = !isPowered; 
+    
+    if (isPowered) {
+        // Request Microphone Permission when turning the TV ON
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            console.log("Microphone access granted");
+        } catch (err) {
+            console.log("Microphone access denied or not available:", err);
+        }
+        
+        document.getElementById('totify-iframe').src = "https://impraveen07.github.io/Win7/"; 
+        frameEl.style.display = 'block'; 
+    } else {
+        document.getElementById('totify-iframe').src = ""; 
+        frameEl.style.display = 'none'; 
+    }
+
+    pBtn.innerText = isPowered ? "🔌 POWER OFF" : "🔌 POWER ON"; 
+    pBtn.style.background = isPowered ? "#dc3545" : "#222"; 
+};
+
     
     iBtn.onclick = () => { 
         isInteracting = !isInteracting; 
