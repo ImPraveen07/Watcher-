@@ -670,7 +670,7 @@ const glbItems = [
         set(playerRef, { id: playerId, x: camera.position.x, y: camera.position.y, z: camera.position.z });
     }
 
-    if (Date.now() - lastMoveTime > 143000) {
+    if (Date.now() - lastMoveTime > 420000) {
         alert("Kicked for AFK");
         set(playerRef, null);
         window.location.reload();
