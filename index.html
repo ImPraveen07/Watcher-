@@ -343,74 +343,77 @@ const glbItems = [
         }
     });
 
-
-
 // --- SYNCED FOLDER LOGIC ---
 
 // 1. Listen for files ADDED to 'active' (or already there)
 onChildAdded(ref(db_fb, 'collections/active'), async (snapshot) => {
-    const item = snapshot.val();
+    const syncItem = snapshot.val(); // Renamed to avoid clashing with main loop
     const id = snapshot.key;
 
     // Check cache or fetch
-    let blob = await getCached(item.src);
+    let blob = await getCached(syncItem.src);
     if (!blob) {
-        const res = await fetch(item.src);
-        blob = await res.blob();
-        await saveCached(item.src, blob);
+        try {
+            const res = await fetch(syncItem.src);
+            blob = await res.blob();
+            await saveCached(syncItem.src, blob);
+        } catch (e) { console.error("Sync Load Error:", e); return; }
     }
 
     const url = URL.createObjectURL(blob);
-loader.load(url, (gltf) => {
-    const model = gltf.scene;
-// Locate this section in your script:
+    loader.load(url, (gltf) => {
+        const model = gltf.scene;
 
-    // --- ADD THIS LINE HERE ---
-    model.userData.src = item.src; 
-    // --------------------------
+        // Tag for Bin Watcher and Auto-Remove identification
+        model.userData.src = syncItem.src; 
 
-    model.traverse(node => {
-        // ... rest of your material code
+        model.traverse(node => {
+            if (node.isMesh) {
+                node.material.transparent = true;
+                node.material.opacity = 0;
+                node.material.metalness = 0.0;
+                node.material.roughness = 0.8;
+            }
+        });
 
-    // --- ADD THIS LINE ---
-    // This allows the Bin Checker to identify this specific synced item
-    model.userData.src = item.src; 
-    // ---------------------
-
-    model.position.set(item.p[0], item.p[1], item.p[2]);
-    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
-    model.scale.set(item.s[0], item.s[1], item.s[2]);
-
-    // ... rest of your fade-in code
-
-        // Initial state: Invisible for fade in
-        model.traverse(n => { if(n.isMesh) { n.material.transparent = true; n.material.opacity = 0; } });
+        model.position.set(syncItem.p[0], syncItem.p[1], syncItem.p[2]);
+        model.rotation.set(THREE.MathUtils.degToRad(syncItem.r[0]), THREE.MathUtils.degToRad(syncItem.r[1]), 0);
+        model.scale.set(syncItem.s[0], syncItem.s[1], syncItem.s[2]);
         
         scene.add(model);
-        activeRoomObjects[id] = model; // Link ID to 3D Mesh
+        activeRoomObjects[id] = model; // Link Firebase ID to Mesh for removal
 
-        // Simple Fade In
-        let opacity = 0;
+        // Smooth Fade In
+        let op = 0;
         const fadeIn = setInterval(() => {
-            opacity += 0.05;
-            model.traverse(n => { if(n.isMesh) n.material.opacity = opacity; });
-            if(opacity >= 1) clearInterval(fadeIn);
+            op += 0.05;
+            model.traverse(n => { if(n.isMesh) n.material.opacity = op; });
+            if(op >= 1) {
+                model.traverse(n => { if(n.isMesh) n.material.transparent = false; });
+                clearInterval(fadeIn);
+            }
         }, 50);
+        
+        URL.revokeObjectURL(url);
     });
 });
 
-// 2. Listen for files REMOVED (Moved to Bin or Permanent Delete)
+// 2. Listen for files REMOVED (Deleted from Dashboard)
 onChildRemoved(ref(db_fb, 'collections/active'), (snapshot) => {
     const id = snapshot.key;
     const model = activeRoomObjects[id];
 
     if (model) {
-        // Fade Out then Remove
-        let opacity = 1;
+        let op = 1;
         const fadeOut = setInterval(() => {
-            opacity -= 0.05;
-            model.traverse(n => { if(n.isMesh) n.material.opacity = opacity; });
-            if(opacity <= 0) {
+            op -= 0.05;
+            model.traverse(n => { 
+                if(n.isMesh) {
+                    n.material.transparent = true;
+                    n.material.opacity = op;
+                }
+            });
+            if(op <= 0) {
                 scene.remove(model);
                 delete activeRoomObjects[id];
                 clearInterval(fadeOut);
@@ -418,64 +421,58 @@ onChildRemoved(ref(db_fb, 'collections/active'), (snapshot) => {
         }, 50);
     }
 });
-// --- THE BIN WATCHER ---
+
+// 3. THE BIN WATCHER (Instant Hide/Show based on Bin contents)
 onValue(ref(db_fb, 'collections/bin'), (snapshot) => {
     const binData = snapshot.val() || {};
     
-    // Convert Firebase keys (like teddy_glb) back to filenames (teddy.glb)
-    const hiddenFiles = Object.keys(binData).map(key => {
-        return key.replace(/_([^_]+)$/, '.$1'); 
-    });
+    // Normalize keys: "teddy_glb" -> "teddy.glb"
+    const hiddenFiles = Object.keys(binData).map(key => key.replace(/_([^_]+)$/, '.$1'));
 
-    // Search the scene for items matching these filenames
     scene.traverse((obj) => {
         if (obj.userData && obj.userData.src) {
-            if (hiddenFiles.includes(obj.userData.src)) {
-                obj.visible = false; // Hide if in bin
-            } else {
-                obj.visible = true;  // Show if not in bin
-            }
+            obj.visible = !hiddenFiles.includes(obj.userData.src);
         }
     });
 });
-    // --- HARDCODED AUTO-REMOVE (5 SECONDS) ---
-    // List the files you want to disappear automatically
-    const filesToAutoRemove = ['cam.glb', 'teddy.glb', 'textured.glb'];
 
-    setTimeout(() => {
-        scene.traverse((obj) => {
-            if (obj.userData && filesToAutoRemove.includes(obj.userData.src)) {
-                
-                // Start a Fade Out animation
-                let opacity = 1.0;
-                const fadeOut = setInterval(() => {
-                    opacity -= 0.05;
-                    obj.traverse(node => {
-                        if (node.isMesh) {
-                            node.material.transparent = true;
-                            node.material.opacity = opacity;
-                        }
-                    });
+// 4. HARDCODED AUTO-REMOVE (Triggers 5 seconds after entry)
+const filesToAutoRemove = ['cam.glb', 'teddy.glb', 'textured.glb'];
 
-                    if (opacity <= 0) {
-                        clearInterval(fadeOut);
-                        scene.remove(obj);
-                        console.log("AUTO-REMOVED:", obj.userData.src);
+setTimeout(() => {
+    scene.traverse((obj) => {
+        // Look for meshes matching our target list
+        if (obj.userData && filesToAutoRemove.includes(obj.userData.src)) {
+            let op = 1.0;
+            const fadeOut = setInterval(() => {
+                op -= 0.05;
+                obj.traverse(node => {
+                    if (node.isMesh) {
+                        node.material.transparent = true;
+                        node.material.opacity = op;
                     }
-                }, 50);
-            }
-        });
-    }, 5000); // 5000ms = 5 Seconds
+                });
 
-    // 3. Hide Loader
+                if (op <= 0) {
+                    clearInterval(fadeOut);
+                    scene.remove(obj);
+                    console.log("AUTO-REMOVED:", obj.userData.src);
+                }
+            }, 50);
+        }
+    });
+}, 5000); 
+
+// 5. Finalize Loader
+setTimeout(() => { 
+    document.getElementById('loader-screen').style.opacity = '0'; 
     setTimeout(() => { 
-        document.getElementById('loader-screen').style.opacity = '0'; 
-        setTimeout(() => { 
-            document.getElementById('loader-screen').style.display = 'none'; 
-            animate(); 
-        }, 500); 
-    }, 1500);
-}
+        document.getElementById('loader-screen').style.display = 'none'; 
+        animate(); 
+    }, 500); 
+}, 1500);
+} // Ends the boot() function
+
 
     const staticItems = [
                // --- LARGE STRUCTURES & WALLS ---
