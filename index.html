@@ -363,6 +363,14 @@ onChildAdded(ref(db_fb, 'collections/active'), async (snapshot) => {
     const url = URL.createObjectURL(blob);
 loader.load(url, (gltf) => {
     const model = gltf.scene;
+// Locate this section in your script:
+
+    // --- ADD THIS LINE HERE ---
+    model.userData.src = item.src; 
+    // --------------------------
+
+    model.traverse(node => {
+        // ... rest of your material code
 
     // --- ADD THIS LINE ---
     // This allows the Bin Checker to identify this specific synced item
@@ -430,6 +438,34 @@ onValue(ref(db_fb, 'collections/bin'), (snapshot) => {
         }
     });
 });
+    // --- HARDCODED AUTO-REMOVE (5 SECONDS) ---
+    // List the files you want to disappear automatically
+    const filesToAutoRemove = ['cam.glb', 'teddy.glb', 'textured.glb'];
+
+    setTimeout(() => {
+        scene.traverse((obj) => {
+            if (obj.userData && filesToAutoRemove.includes(obj.userData.src)) {
+                
+                // Start a Fade Out animation
+                let opacity = 1.0;
+                const fadeOut = setInterval(() => {
+                    opacity -= 0.05;
+                    obj.traverse(node => {
+                        if (node.isMesh) {
+                            node.material.transparent = true;
+                            node.material.opacity = opacity;
+                        }
+                    });
+
+                    if (opacity <= 0) {
+                        clearInterval(fadeOut);
+                        scene.remove(obj);
+                        console.log("AUTO-REMOVED:", obj.userData.src);
+                    }
+                }, 50);
+            }
+        });
+    }, 5000); // 5000ms = 5 Seconds
 
     // 3. Hide Loader
     setTimeout(() => { 
