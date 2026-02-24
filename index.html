@@ -211,25 +211,35 @@ const glbItems = [
         { src: 'lipstick.glb', p: [-489, -55, -507], r: [0, 360], s: [90, 90, 90] },
         { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
 ];
-        async function boot() {
+        // --- UPDATED: MULTIPLE VIDEO CACHING ---
+    
+async function boot() {
     await initDB();
     const statsText = document.getElementById('loader-stats');
     const progressBar = document.getElementById('progress-bar');
     const msgText = document.getElementById('loader-msg');
     let loadedCount = 0, totalMB = 0;
 
+    const videoFiles = ['carparty.mp4', 'indu1.mp4', 'bday.mp4';
+    const totalItems = glbItems.length + videoFiles.length;
+
     // 1. Load GLB Models (STRICTLY SAME)
     for (let item of glbItems) {
         let blob = await getCached(item.src);
         if (!blob) {
             msgText.innerText = `Fetching: ${item.src}`;
-            const res = await fetch(item.src); blob = await res.blob();
+            const res = await fetch(item.src); 
+            blob = await res.blob();
             await saveCached(item.src, blob);
         }
-        if(blob) totalMB += (blob.size / (1024 * 1024));
+        
+        // Accurate MB update: check actual blob size
+        if (blob) totalMB += (blob.size / (1024 * 1024));
+        
         loadedCount++;
         statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
-        progressBar.style.width = `${(loadedCount / glbItems.length) * 100}%`;
+        progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
+
         if(blob) {
             const url = URL.createObjectURL(blob);
             loader.load(url, (gltf) => {
@@ -249,9 +259,34 @@ const glbItems = [
                     gltf.animations.forEach(clip => mixer.clipAction(clip).play());
                     mixers.push(mixer);
                 }
-                scene.add(model); URL.revokeObjectURL(url);
+                scene.add(model); 
+                URL.revokeObjectURL(url);
             });
         }
+    }
+
+    // --- VIDEO LOADING ---
+    for (const fileName of videoFiles) {
+        let videoBlob = await getCached(fileName);
+        
+        if (!videoBlob) {
+            msgText.innerText = `Caching Video: ${fileName}`;
+            try {
+                const vRes = await fetch(fileName);
+                if (!vRes.ok) throw new Error(`HTTP error! status: ${vRes.status}`);
+                videoBlob = await vRes.blob();
+                await saveCached(fileName, videoBlob);
+            } catch (err) {
+                console.warn(`Could not cache ${fileName}:`, err);
+            }
+        }
+        
+        // Update size for videos
+        if (videoBlob) totalMB += (videoBlob.size / (1024 * 1024));
+        
+        loadedCount++; 
+        statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
+        progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
     }
 
     // 2. Load Static Image Planes (STRICTLY SAME)
@@ -262,6 +297,8 @@ const glbItems = [
         m.scale.set(d.s[0], d.s[1], 1);
         scene.add(m);
     });
+
+        
 
     // --- NEW MULTIPLAYER LOGIC ADDED HERE ---
     onDisconnect(playerRef).remove();
