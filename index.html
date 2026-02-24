@@ -216,8 +216,7 @@ const glbItems = [
         { src: 'cam.glb', p: [65, 12, -314], r: [265, 0], s: [5, 5, 5] }
 ];
         // --- UPDATED: MULTIPLE VIDEO CACHING ---
-    
-async function boot() {
+    async function boot() {
     await initDB();
     const statsText = document.getElementById('loader-stats');
     const progressBar = document.getElementById('progress-bar');
@@ -225,9 +224,10 @@ async function boot() {
     let loadedCount = 0, totalMB = 0;
 
     const videoFiles = ['carparty.mp4', 'indu1.mp4', 'bday.mp4'];
+
     const totalItems = glbItems.length + videoFiles.length;
 
-    // 1. Load Initial GLB Models
+    // 1. Load GLB Models (STRICTLY SAME)
     for (let item of glbItems) {
         let blob = await getCached(item.src);
         if (!blob) {
@@ -237,7 +237,9 @@ async function boot() {
             await saveCached(item.src, blob);
         }
         
+        // Accurate MB update: check actual blob size
         if (blob) totalMB += (blob.size / (1024 * 1024));
+        
         loadedCount++;
         statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
         progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
@@ -267,9 +269,10 @@ async function boot() {
         }
     }
 
-    // 2. Video Caching
+    // --- VIDEO LOADING ---
     for (const fileName of videoFiles) {
         let videoBlob = await getCached(fileName);
+        
         if (!videoBlob) {
             msgText.innerText = `Caching Video: ${fileName}`;
             try {
@@ -281,117 +284,148 @@ async function boot() {
                 console.warn(`Could not cache ${fileName}:`, err);
             }
         }
+        
+        // Update size for videos
         if (videoBlob) totalMB += (videoBlob.size / (1024 * 1024));
+        
         loadedCount++; 
         statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
         progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
     }
 
-    // 3. Load Static Image Planes
-    staticItems.forEach(d => {
-        const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
-        m.position.set(d.p[0], d.p[1], d.p[2]); 
-        m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0); 
-        m.scale.set(d.s[0], d.s[1], 1);
-        scene.add(m);
-    });
-
-    // 4. Multiplayer Sync
-    onDisconnect(playerRef).remove();
+    // 2. Load Static Image Planes (STRICTLY SAME)
+    // --- UPDATE THIS BLOCK ---
+staticItems.forEach(d => {
+    const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
     
+    // ADD THIS LINE
+    m.userData.src = d.src; 
+
+    m.position.set(d.p[0], d.p[1], d.p[2]); 
+    // ... rest of your code
+});
+
+        
+
+    // --- NEW MULTIPLAYER LOGIC ADDED HERE ---
+    onDisconnect(playerRef).remove();
     onChildAdded(playersRef, (snapshot) => {
         if (snapshot.key === playerId) return;
-        if (!otherPlayers[snapshot.key]) {
-            otherPlayers[snapshot.key] = createPlayerMesh();
-            scene.add(otherPlayers[snapshot.key]);
-        }
+        const group = new THREE.Group();
+        const cap = new THREE.Mesh(new THREE.CapsuleGeometry(8, 12, 4, 8), new THREE.MeshStandardMaterial({ color: new THREE.Color(`hsl(${Math.random() * 360}, 70%, 50%)`) }));
+        cap.position.y = 20; group.add(cap);
+        scene.add(group); otherPlayers[snapshot.key] = group;
     });
-
     onChildRemoved(playersRef, (snapshot) => {
-        if (otherPlayers[snapshot.key]) { 
-            scene.remove(otherPlayers[snapshot.key]); 
-            delete otherPlayers[snapshot.key]; 
-        }
+        if (otherPlayers[snapshot.key]) { scene.remove(otherPlayers[snapshot.key]); delete otherPlayers[snapshot.key]; }
     });
-
+        // --- FIXED MULTIPLAYER SYNC ---
     onValue(playersRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
         for (let id in data) {
-            if (id !== playerId && otherPlayers[id]) {
+            if (id !== playerId) {
+                // If player doesn't exist yet, create them using your helper
+                if (!otherPlayers[id]) {
+                    otherPlayers[id] = createPlayerMesh();
+                    scene.add(otherPlayers[id]);
+                }
+                // Smoothly update position
                 const targetPos = new THREE.Vector3(data[id].x, data[id].y - 40, data[id].z);
                 otherPlayers[id].position.lerp(targetPos, 0.2);
             }
         }
     });
 
-    // 5. Synced Folder Logic (Win 7 Integration)
-    const activeRef = ref(db_fb, 'collections/active');
 
-    onChildAdded(activeRef, async (snapshot) => {
-        const item = snapshot.val();
-        const identifier = item.name || snapshot.key;
 
-        let correctedSrc = item.src;
-        if (correctedSrc && correctedSrc.includes('_')) {
-            const lastUnderscoreIndex = correctedSrc.lastIndexOf('_');
-            correctedSrc = correctedSrc.substring(0, lastUnderscoreIndex) + '.' + correctedSrc.substring(lastUnderscoreIndex + 1);
-        }
+// --- SYNCED FOLDER LOGIC ---
 
-        let blob = await getCached(correctedSrc);
-        if (!blob) {
-            try {
-                const res = await fetch(correctedSrc);
-                if (!res.ok) throw new Error("File not found");
-                blob = await res.blob();
-                await saveCached(correctedSrc, blob);
-            } catch (err) {
-                console.error("Failed to fetch synced object:", correctedSrc, err);
-                return;
+// 1. Listen for files ADDED to 'active' (or already there)
+onChildAdded(ref(db_fb, 'collections/active'), async (snapshot) => {
+    const item = snapshot.val();
+    const id = snapshot.key;
+
+    // Check cache or fetch
+    let blob = await getCached(item.src);
+    if (!blob) {
+        const res = await fetch(item.src);
+        blob = await res.blob();
+        await saveCached(item.src, blob);
+    }
+
+    const url = URL.createObjectURL(blob);
+loader.load(url, (gltf) => {
+    const model = gltf.scene;
+
+    // --- ADD THIS LINE ---
+    // This allows the Bin Checker to identify this specific synced item
+    model.userData.src = item.src; 
+    // ---------------------
+
+    model.position.set(item.p[0], item.p[1], item.p[2]);
+    model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
+    model.scale.set(item.s[0], item.s[1], item.s[2]);
+
+    // ... rest of your fade-in code
+
+        // Initial state: Invisible for fade in
+        model.traverse(n => { if(n.isMesh) { n.material.transparent = true; n.material.opacity = 0; } });
+        
+        scene.add(model);
+        activeRoomObjects[id] = model; // Link ID to 3D Mesh
+
+        // Simple Fade In
+        let opacity = 0;
+        const fadeIn = setInterval(() => {
+            opacity += 0.05;
+            model.traverse(n => { if(n.isMesh) n.material.opacity = opacity; });
+            if(opacity >= 1) clearInterval(fadeIn);
+        }, 50);
+    });
+});
+
+// 2. Listen for files REMOVED (Moved to Bin or Permanent Delete)
+onChildRemoved(ref(db_fb, 'collections/active'), (snapshot) => {
+    const id = snapshot.key;
+    const model = activeRoomObjects[id];
+
+    if (model) {
+        // Fade Out then Remove
+        let opacity = 1;
+        const fadeOut = setInterval(() => {
+            opacity -= 0.05;
+            model.traverse(n => { if(n.isMesh) n.material.opacity = opacity; });
+            if(opacity <= 0) {
+                scene.remove(model);
+                delete activeRoomObjects[id];
+                clearInterval(fadeOut);
+            }
+        }, 50);
+    }
+});
+// --- THE BIN WATCHER ---
+onValue(ref(db_fb, 'collections/bin'), (snapshot) => {
+    const binData = snapshot.val() || {};
+    
+    // Convert Firebase keys (like teddy_glb) back to filenames (teddy.glb)
+    const hiddenFiles = Object.keys(binData).map(key => {
+        return key.replace(/_([^_]+)$/, '.$1'); 
+    });
+
+    // Search the scene for items matching these filenames
+    scene.traverse((obj) => {
+        if (obj.userData && obj.userData.src) {
+            if (hiddenFiles.includes(obj.userData.src)) {
+                obj.visible = false; // Hide if in bin
+            } else {
+                obj.visible = true;  // Show if not in bin
             }
         }
-
-        const url = URL.createObjectURL(blob);
-        loader.load(url, (gltf) => {
-            const model = gltf.scene;
-            model.position.set(item.p[0], item.p[1], item.p[2]);
-            model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
-            model.scale.set(item.s[0], item.s[1], item.s[2]);
-            
-            model.traverse(n => { if(n.isMesh) { n.material.transparent = true; n.material.opacity = 0; } });
-            
-            scene.add(model);
-            activeRoomObjects[identifier] = model;
-
-            let opacity = 0;
-            const fadeIn = setInterval(() => {
-                opacity += 0.05;
-                model.traverse(n => { if(n.isMesh) n.material.opacity = opacity; });
-                if(opacity >= 1) clearInterval(fadeIn);
-            }, 50);
-        });
     });
+});
 
-    onChildRemoved(activeRef, (snapshot) => {
-        const item = snapshot.val();
-        const identifier = item.name || snapshot.key;
-        const model = activeRoomObjects[identifier];
-
-        if (model) {
-            let opacity = 1;
-            const fadeOut = setInterval(() => {
-                opacity -= 0.05;
-                model.traverse(n => { if(n.isMesh) n.material.opacity = opacity; });
-                if(opacity <= 0) {
-                    scene.remove(model);
-                    delete activeRoomObjects[identifier];
-                    clearInterval(fadeOut);
-                }
-            }, 50);
-        }
-    });
-
-    // 6. Hide Loader Screen
+    // 3. Hide Loader
     setTimeout(() => { 
         document.getElementById('loader-screen').style.opacity = '0'; 
         setTimeout(() => { 
