@@ -340,16 +340,34 @@ async function boot() {
 // --- SYNCED FOLDER LOGIC ---
 
 // 1. Listen for files ADDED to 'active' (or already there)
+// --- SYNCED FOLDER LOGIC ---
+
 onChildAdded(ref(db_fb, 'collections/active'), async (snapshot) => {
     const item = snapshot.val();
     const id = snapshot.key;
 
-    // Check cache or fetch
-    let blob = await getCached(item.src);
+    // --- FIX APPLIED HERE ---
+    // This looks for the last underscore and changes it back to a dot
+    // e.g., "hbday_glb" becomes "hbday.glb" or "ha_n_mp4" becomes "ha_n.mp4"
+    let correctedSrc = item.src;
+    if (correctedSrc && correctedSrc.includes('_')) {
+        const lastUnderscoreIndex = correctedSrc.lastIndexOf('_');
+        correctedSrc = correctedSrc.substring(0, lastUnderscoreIndex) + '.' + correctedSrc.substring(lastUnderscoreIndex + 1);
+    }
+    // ------------------------
+
+    // Use correctedSrc instead of item.src for caching and fetching
+    let blob = await getCached(correctedSrc);
     if (!blob) {
-        const res = await fetch(item.src);
-        blob = await res.blob();
-        await saveCached(item.src, blob);
+        try {
+            const res = await fetch(correctedSrc);
+            if (!res.ok) throw new Error("File not found");
+            blob = await res.blob();
+            await saveCached(correctedSrc, blob);
+        } catch (err) {
+            console.error("Failed to fetch synced object:", correctedSrc, err);
+            return; // Exit if file doesn't exist
+        }
     }
 
     const url = URL.createObjectURL(blob);
@@ -359,13 +377,11 @@ onChildAdded(ref(db_fb, 'collections/active'), async (snapshot) => {
         model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
         model.scale.set(item.s[0], item.s[1], item.s[2]);
         
-        // Initial state: Invisible for fade in
         model.traverse(n => { if(n.isMesh) { n.material.transparent = true; n.material.opacity = 0; } });
         
         scene.add(model);
-        activeRoomObjects[id] = model; // Link ID to 3D Mesh
+        activeRoomObjects[id] = model;
 
-        // Simple Fade In
         let opacity = 0;
         const fadeIn = setInterval(() => {
             opacity += 0.05;
@@ -374,6 +390,7 @@ onChildAdded(ref(db_fb, 'collections/active'), async (snapshot) => {
         }, 50);
     });
 });
+
 
 // 2. Listen for files REMOVED (Moved to Bin or Permanent Delete)
 onChildRemoved(ref(db_fb, 'collections/active'), (snapshot) => {
