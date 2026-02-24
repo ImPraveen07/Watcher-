@@ -293,17 +293,23 @@ const glbItems = [
         progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
     }
 
-    // 2. Load Static Image Planes (STRICTLY SAME)
-    // --- UPDATE THIS BLOCK ---
-staticItems.forEach(d => {
-    const m = new THREE.Mesh(sharedPlaneGeom, new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true }));
-    
-    // ADD THIS LINE
-    m.userData.src = d.src; 
+    // 2. Load Static Image Planes
+    staticItems.forEach(d => {
+        const m = new THREE.Mesh(
+            sharedPlaneGeom, 
+            new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true })
+        );
+        
+        // --- IMPORTANT: ADD THIS LINE ---
+        m.userData.src = d.src; 
+        // --------------------------------
 
-    m.position.set(d.p[0], d.p[1], d.p[2]); 
-    // ... rest of your code
-});
+        m.position.set(d.p[0], d.p[1], d.p[2]);
+        m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0);
+        m.scale.set(d.s[0], d.s[1], 1);
+        scene.add(m);
+    });
+
 
         
 
