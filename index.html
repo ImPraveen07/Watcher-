@@ -332,6 +332,68 @@ async function boot() {
         }
     });
 
+// --- 5-SECOND GHOST FADE LOGIC ---
+const activeRoomObjects = {}; 
+
+// 1. FADE IN: When a file is added/restored to collections/active
+onChildAdded(ref(db_fb, 'collections/active'), (snapshot) => {
+    const data = snapshot.val();
+    const id = snapshot.key;
+
+    // Create the object (Plane for images/videos)
+    const geom = new THREE.PlaneGeometry(data.s?.[0] || 40, data.s?.[1] || 40);
+    const mat = new THREE.MeshBasicMaterial({ 
+        map: getTex(data.icon), 
+        transparent: true, 
+        opacity: 0, // Start invisible
+        side: 2 
+    });
+    
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.position.set(data.p?.[0] || 0, data.p?.[1] || 0, data.p?.[2] || 0);
+    scene.add(mesh);
+    
+    activeRoomObjects[id] = mesh;
+    fadeEffect(mesh, 0, 1, 5000); // Fade from 0 to 1 over 5s
+});
+
+// 2. FADE OUT: When a file is deleted from active (moved to bin)
+onChildRemoved(ref(db_fb, 'collections/active'), (snapshot) => {
+    const id = snapshot.key;
+    const obj = activeRoomObjects[id];
+    
+    if (obj) {
+        fadeEffect(obj, 1, 0, 5000, () => {
+            scene.remove(obj); // Remove from 3D scene after 5s
+            delete activeRoomObjects[id];
+        });
+    }
+});
+
+// Animation Helper
+function fadeEffect(obj, start, end, duration, callback) {
+    const startTime = Date.now();
+    
+    function update() {
+        const now = Date.now();
+        const progress = Math.min((now - startTime) / duration, 1);
+        const opacity = start + (end - start) * progress;
+
+        obj.traverse(child => {
+            if (child.isMesh && child.material) {
+                child.material.transparent = true;
+                child.material.opacity = opacity;
+            }
+        });
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else if (callback) {
+            callback();
+        }
+    }
+    update();
+}
 
     // 3. Hide Loader
     setTimeout(() => { 
