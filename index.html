@@ -356,20 +356,29 @@ async function boot() {
                 const fileName = obj.userData.src;
                 const shouldBeHidden = filesInBin.includes(fileName);
 
-                // Start 5-second Fade Out if added to bin
-                if (shouldBeHidden && obj.visible && !fadingOut.has(fileName)) {
-                    fadingOut.add(fileName);
-                    let op = 1.0;
-                    const fadeOutInterval = setInterval(() => {
-                        op -= 0.01; // ~5 seconds (50ms * 100)
-                        obj.traverse(n => { if(n.isMesh) { n.material.transparent = true; n.material.opacity = op; }});
-                        if (op <= 0) {
-                            clearInterval(fadeOutInterval);
-                            obj.visible = false;
-                            fadingOut.delete(fileName);
-                        }
-                    }, 50);
-                } 
+                // Start 7-second Fade Out if added to bin
+if (shouldBeHidden && obj.visible && !fadingOut.has(fileName)) {
+    fadingOut.add(fileName);
+    let op = 1.0;
+    const fadeOutInterval = setInterval(() => {
+        // 1.0 / (7000ms / 50ms) = 0.00714...
+        op -= 0.0071; 
+        
+        obj.traverse(n => { 
+            if(n.isMesh) { 
+                n.material.transparent = true; 
+                n.material.opacity = op; 
+            }
+        });
+
+        if (op <= 0) {
+            clearInterval(fadeOutInterval);
+            obj.visible = false;
+            fadingOut.delete(fileName);
+        }
+    }, 50);
+}
+
                 // Instant Appear if removed from bin
                 else if (!shouldBeHidden && !obj.visible) {
                     obj.visible = true;
