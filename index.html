@@ -768,21 +768,33 @@ function animate() {
     
     // --- 1. SILENT RECORDER (Saves to RTDB 'replays') ---
     // Records movement, door, tv, and party status every 100ms
-    if (isRecording && now - lastRecordTime > recordFreq) {
-        const replayRef = ref(db_fb, `replays/${playerId}/${currentSessionId}`);
-        push(replayRef, {
-            x: camera.position.x,
-            y: camera.position.y,
-            z: camera.position.z,
-            rx: camera.rotation.x,
-            ry: camera.rotation.y,
-            door: isDoorOpen,         // Saves door state
-            tv: isPowered,            // Saves TV state
-            party: surpriseTriggered, // Saves if party started
-            t: now
-        });
-        lastRecordTime = now;
-    }
+    // --- 1. EXACT MIRROR RECORDER ---
+if (isRecording && now - lastRecordTime > recordFreq) {
+    const replayPath = `replays/${playerId}/${currentSessionId}`;
+    const frameRef = ref(db_fb, replayPath);
+
+    // Save the "Full Room State" at this exact millisecond
+    push(frameRef, {
+        t: now,
+        // 1. Exact Camera Position & Look Angle
+        pos: { 
+            x: camera.position.x, 
+            y: camera.position.y, 
+            z: camera.position.z 
+        },
+        rot: { 
+            x: camera.rotation.x, 
+            y: camera.rotation.y 
+        },
+        // 2. Exact Object States (Door, TV, Party)
+        door: isDoorOpen,         // If true, door is open in replay
+        tv: isPowered,            // If true, TV is on in replay
+        party: surpriseTriggered, // If true, paper blast happens in replay
+        room: camera.position.z > 0 ? "SPAWN" : "TV"
+    });
+
+    lastRecordTime = now;
+}
 
     // --- MULTIPLAYER & AFK LOGIC ---
     if(!isInteracting && (move.x !== 0 || move.y !== 0)) { 
