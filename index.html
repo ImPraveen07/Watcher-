@@ -865,8 +865,13 @@ if (isRecording && now - lastRecordTime > recordFreq) {
     renderer.render(scene, camera); 
     document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
 }
+// --- RECORDING STATUS UI (Optional but helpful) ---
+const recIndicator = document.createElement('div');
+recIndicator.style = "position:fixed; top:45px; right:15px; color:#ff0000; font-size:9px; font-weight:bold; z-index:2000; display:none;";
+recIndicator.innerHTML = "● RECORDING SESSION";
+document.body.appendChild(recIndicator);
 
-    function animate() {
+function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta(), time = Date.now() * 0.001;
     const now = Date.now(); 
@@ -874,37 +879,33 @@ if (isRecording && now - lastRecordTime > recordFreq) {
     mixers.forEach(m => m.update(delta));
     
     // --- 1. OPTIMIZED MIRROR RECORDER ---
-    // Captures exact position, look-rotation, and interactive states
     if (isRecording && now - lastRecordTime > recordFreq) {
+        recIndicator.style.display = 'block'; // Show red dot when recording
         const replayPath = `replays/${playerId}/${currentSessionId}`;
         const frameRef = ref(db_fb, replayPath);
 
         push(frameRef, {
             t: now,
-            // Position
             x: parseFloat(camera.position.x.toFixed(2)), 
             y: parseFloat(camera.position.y.toFixed(2)), 
             z: parseFloat(camera.position.z.toFixed(2)),
-            // Rotation (Where the user is looking)
             rx: parseFloat(camera.rotation.x.toFixed(4)), 
             ry: parseFloat(camera.rotation.y.toFixed(4)),
-            // Interactive States
-            dr: isDoorOpen,         // Door state
-            tv: isPowered,          // TV state
-            py: surpriseTriggered   // Party/Confetti state
+            dr: isDoorOpen,         
+            tv: isPowered,          
+            py: surpriseTriggered   
         });
-
         lastRecordTime = now;
     }
 
-    // --- MULTIPLAYER & AFK LOGIC ---
+    // --- 2. MULTIPLAYER & AFK LOGIC ---
     if(!isInteracting && (move.x !== 0 || move.y !== 0)) { 
         lastMoveTime = Date.now(); 
         fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize(); 
         rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize(); 
         velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5)); 
         
-        // Sync Live Player position for others to see
+        // Live sync for other players
         set(playerRef, { id: playerId, x: camera.position.x, y: camera.position.y, z: camera.position.z });
     }
 
@@ -915,24 +916,28 @@ if (isRecording && now - lastRecordTime > recordFreq) {
         return;
     }
 
-    // --- SMOOTH VOLUME CONTROL ---
-    const distToTV = camera.position.distanceTo(cssObj.position);
-    if (isPowered) {
-        targetVol = 0.1; 
-    } else if (distToTV < 400) {
-        targetVol = 0.8; 
-    } else {
-        targetVol = 1.0; 
+    // --- 3. PHYSICS & COLLISION ---
+    velocity.multiplyScalar(0.9); 
+    camera.position.add(velocity);
+    camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); 
+    camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
+    
+    // Door Collision
+    if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) {
+        camera.position.z = camera.position.z > 0 ? 25 : -25;
     }
+
+    // --- 4. AUDIO & INTERACTABLES ---
+    const distToTV = camera.position.distanceTo(cssObj.position);
+    targetVol = isPowered ? 0.1 : (distToTV < 400 ? 0.8 : 1.0);
+
     if (bgm && !bgm.paused) {
         bgm.volume += (targetVol - bgm.volume) * 0.02;
     }
 
-    // --- PARTY TRIGGER ---
     if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) { 
         surpriseTriggered = true; 
         triggerParty(); 
-        bgm.play().catch(() => console.log("Interaction required for audio"));
     }
     
     if(fadeLight) { 
@@ -940,12 +945,11 @@ if (isRecording && now - lastRecordTime > recordFreq) {
         dirLight.intensity += (2.5 - dirLight.intensity) * 0.05; 
     }
     
-    // --- ANIMATION UPDATES (Confetti/Balloons) ---
+    // --- 5. ANIMATIONS (Confetti/Balloons/Door) ---
     poppers.forEach(p => { 
         if(p.mesh.position.y > floorY + 2) { 
             p.mesh.position.add(p.vel); 
-            p.mesh.rotation.x += p.rot.x; 
-            p.mesh.rotation.y += p.rot.y; 
+            p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y; 
         } 
     });
     
@@ -960,31 +964,21 @@ if (isRecording && now - lastRecordTime > recordFreq) {
         }
     });
 
-    // --- PHYSICS & COLLISION ---
-    velocity.multiplyScalar(0.9); 
-    camera.position.add(velocity);
-    camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); 
-    camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
+    doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
     
-    if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) {
-        camera.position.z = camera.position.z > 0 ? 25 : -25;
-    }
-    
-    // --- UI VISIBILITY ---
+    // --- 6. UI & RENDERING ---
     document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
     pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
     iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
-    
-    // --- DOOR ANIMATION ---
-    doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
-    
-    // --- RENDER ---
+    document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
+
     cssRenderer.render(cssScene, camera); 
     renderer.render(scene, camera); 
-    document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
 }
 
-   boot();
+boot();
+
+
 </script>
 </body>
 </html>
