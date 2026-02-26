@@ -103,28 +103,7 @@ const recordFreq = 100; // Captures 10 frames per second for smooth playback
 let sessionData = []; 
 const MAX_BUFFER = 50; // Upload in chunks of 50 frames to save bandwidth
 
-// Inside your SINGLE animate() function:
-if (isRecording && now - lastRecordTime > recordFreq) {
-    const frame = {
-        t: now,
-        x: parseFloat(camera.position.x.toFixed(2)),
-        z: parseFloat(camera.position.z.toFixed(2)),
-        ry: parseFloat(camera.rotation.y.toFixed(4)),
-        dr: isDoorOpen ? 1 : 0, // Use numbers (0/1) to save bytes
-        tv: isPowered ? 1 : 0
-    };
-    
-    sessionData.push(frame);
-    lastRecordTime = now;
 
-    // Periodically sync the buffer to Firebase to avoid data loss
-    if (sessionData.length >= MAX_BUFFER) {
-        const replayPath = `replays/${playerId}/${currentSessionId}`;
-        const bulkRef = push(ref(db_fb, replayPath)); 
-        set(bulkRef, sessionData);
-        sessionData = []; // Clear buffer
-    }
-}
 
     let lastMoveTime = Date.now();
     const AFK_TIMEOUT = 45000; 
