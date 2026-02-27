@@ -291,17 +291,18 @@ async function boot() {
     }
 
     // 3. Load Static Image Planes
-    staticItems.forEach(d => {
-        const m = new THREE.Mesh(
-            sharedPlaneGeom, 
-            new THREE.MeshBasicMaterial({ map: getTex(d.src), side: 2, transparent: true })
-        );
-        m.userData.src = d.src; // TAGGED
-        m.position.set(d.p[0], d.p[1], d.p[2]);
-        m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0);
-        m.scale.set(d.s[0], d.s[1], 1);
-        scene.add(m);
-    });
+staticItems.forEach(d => {
+    const m = new THREE.Mesh(
+        sharedPlaneGeom, 
+        new THREE.MeshBasicMaterial({ 
+            map: getTex(d.src), 
+            side: 2, 
+            transparent: true,
+            alphaTest: 0.5,     // <--- ADD THIS: Discards black pixels
+            opacity: 1          // Ensure opacity is full
+        })
+    );
+    // ...
 
     // --- MULTIPLAYER SYNC ---
     onDisconnect(playerRef).remove();
