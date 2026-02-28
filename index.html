@@ -290,30 +290,54 @@ async function boot() {
         progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
     }
 
+
     // 3. Load Static Image Planes
-staticItems.forEach(d => {
-    const m = new THREE.Mesh(
-        sharedPlaneGeom, 
-        new THREE.MeshBasicMaterial({ 
-            map: getTex(d.src), 
-            side: 2, 
-            transparent: true,
-            alphaTest: 0.5,     // <--- ADD THIS: Discards black pixels
-            opacity: 1          // Ensure opacity is full
-        })
-    );
-    // ...
+    staticItems.forEach(d => {
+        const m = new THREE.Mesh(
+            sharedPlaneGeom, 
+            new THREE.MeshBasicMaterial({ 
+                map: getTex(d.src), 
+                side: 2, 
+                transparent: true,
+                alphaTest: 0.5,     // Discards black pixels
+                opacity: 1          
+            })
+        );
+        
+        // Apply position, rotation, and scale from staticItems array
+        m.position.set(d.p[0], d.p[1], d.p[2]);
+        m.rotation.set(
+            THREE.MathUtils.degToRad(d.r[0] || 0), 
+            THREE.MathUtils.degToRad(d.r[1] || 0), 
+            THREE.MathUtils.degToRad(d.r[2] || 0)
+        );
+        
+        // Handle 2D scale [w, h] or 3D scale [w, h, d]
+        if (d.s.length === 2) {
+            m.scale.set(d.s[0], d.s[1], 1);
+        } else {
+            m.scale.set(d.s[0], d.s[1], d.s[2]);
+        }
+        
+        scene.add(m);
+    }); // <--- LOOP CLOSED PROPERLY HERE
 
     // --- MULTIPLAYER SYNC ---
     onDisconnect(playerRef).remove();
+    
     onChildAdded(playersRef, (snapshot) => {
         if (snapshot.key === playerId) return;
         otherPlayers[snapshot.key] = createPlayerMesh();
         scene.add(otherPlayers[snapshot.key]);
     });
+
     onChildRemoved(playersRef, (snapshot) => {
-        if (otherPlayers[snapshot.key]) { scene.remove(otherPlayers[snapshot.key]); delete otherPlayers[snapshot.key]; }
+        if (otherPlayers[snapshot.key]) { 
+            scene.remove(otherPlayers[snapshot.key]); 
+            delete otherPlayers[snapshot.key]; 
+        }
     });
+
     onValue(playersRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
@@ -331,9 +355,11 @@ staticItems.forEach(d => {
         const id = snapshot.key;
         let blob = await getCached(syncItem.src);
         if (!blob) {
-            const res = await fetch(syncItem.src);
-            blob = await res.blob();
-            await saveCached(syncItem.src, blob);
+            try {
+                const res = await fetch(syncItem.src);
+                blob = await res.blob();
+                await saveCached(syncItem.src, blob);
+            } catch (e) { return; }
         }
         const url = URL.createObjectURL(blob);
         loader.load(url, (gltf) => {
@@ -353,7 +379,7 @@ staticItems.forEach(d => {
         if (model) { scene.remove(model); delete activeRoomObjects[snapshot.key]; }
     });
 
-    // --- THE UNIFIED BIN WATCHER (FADE OUT 5s / INSTANT APPEAR) ---
+    // --- THE UNIFIED BIN WATCHER ---
     onValue(ref(db_fb, 'collections/bin'), (snapshot) => {
         const binData = snapshot.val() || {};
         const filesInBin = Object.keys(binData).map(k => k.replace(/_([^_]+)$/, '.$1'));
@@ -363,30 +389,25 @@ staticItems.forEach(d => {
                 const fileName = obj.userData.src;
                 const shouldBeHidden = filesInBin.includes(fileName);
 
-                // Start 7-second Fade Out if added to bin
-if (shouldBeHidden && obj.visible && !fadingOut.has(fileName)) {
-    fadingOut.add(fileName);
-    let op = 1.0;
-    const fadeOutInterval = setInterval(() => {
-        // 1.0 / (7000ms / 50ms) = 0.00714...
-        op -= 0.0071; 
-        
-        obj.traverse(n => { 
-            if(n.isMesh) { 
-                n.material.transparent = true; 
-                n.material.opacity = op; 
-            }
-        });
+                if (shouldBeHidden && obj.visible && !fadingOut.has(fileName)) {
+                    fadingOut.add(fileName);
+                    let op = 1.0;
+                    const fadeOutInterval = setInterval(() => {
+                        op -= 0.0071; 
+                        obj.traverse(n => { 
+                            if(n.isMesh) { 
+                                n.material.transparent = true; 
+                                n.material.opacity = op; 
+                            }
+                        });
 
-        if (op <= 0) {
-            clearInterval(fadeOutInterval);
-            obj.visible = false;
-            fadingOut.delete(fileName);
-        }
-    }, 50);
-}
-
-                // Instant Appear if removed from bin
+                        if (op <= 0) {
+                            clearInterval(fadeOutInterval);
+                            obj.visible = false;
+                            fadingOut.delete(fileName);
+                        }
+                    }, 50);
+                }
                 else if (!shouldBeHidden && !obj.visible) {
                     obj.visible = true;
                     obj.traverse(n => { if(n.isMesh) { n.material.opacity = 1.0; n.material.transparent = false; }});
@@ -397,13 +418,16 @@ if (shouldBeHidden && obj.visible && !fadingOut.has(fileName)) {
 
     // 5. Finalize Loader
     setTimeout(() => { 
-        document.getElementById('loader-screen').style.opacity = '0'; 
-        setTimeout(() => { 
-            document.getElementById('loader-screen').style.display = 'none'; 
-            animate(); 
-        }, 500); 
+        const loaderScreen = document.getElementById('loader-screen');
+        if (loaderScreen) {
+            loaderScreen.style.opacity = '0'; 
+            setTimeout(() => { 
+                loaderScreen.style.display = 'none'; 
+                animate(); 
+            }, 500);
+        }
     }, 1500);
-}
+} // This closes the boot() function
 
     const staticItems = [
                // --- LARGE STRUCTURES & WALLS ---
