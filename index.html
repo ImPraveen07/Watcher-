@@ -680,8 +680,32 @@ async function boot() {
     box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); 
     box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333"); 
     box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333"); 
-    box(100, T-180, 15, 0, floorY+260, 0, "#333"); const doorMesh = box(100, 180, 8, 0, floorY + 90, 0, "#111");
+    box(100, T-180, 15, 0, floorY+260, 0, "#333"); 
+// 1. Load both textures (Note the .jpg for the side)
+const doorMainTex = getTex('door.png');      
+const doorSideTex = getTex('doorside.jpg');  
 
+// 2. Fix the side texture scaling so it looks natural on the thin edge
+doorSideTex.wrapS = THREE.RepeatWrapping;
+doorSideTex.wrapT = THREE.RepeatWrapping;
+// (1, 1) keeps it original; change to (1, 2) if it looks too stretched
+doorSideTex.repeat.set(1, 1); 
+
+// 3. Apply to the 6 sides (Right, Left, Top, Bottom, Front, Back)
+const doorMaterials = [
+    new THREE.MeshStandardMaterial({ map: doorSideTex }), // 0: Right thin edge
+    new THREE.MeshStandardMaterial({ map: doorSideTex }), // 1: Left thin edge
+    new THREE.MeshStandardMaterial({ color: "#111" }),    // 2: Top edge
+    new THREE.MeshStandardMaterial({ color: "#111" }),    // 3: Bottom edge
+    new THREE.MeshStandardMaterial({ map: doorMainTex }), // 4: Front face
+    new THREE.MeshStandardMaterial({ map: doorMainTex }), // 5: Back face
+];
+
+// 4. Create the door mesh
+// Dimensions: Width(100), Height(180), Thickness(8)
+const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(100, 180, 8), doorMaterials);
+doorMesh.position.set(0, floorY + 90, 0);
+scene.add(doorMesh);
     const frameEl = document.getElementById('html-frame-element');
     const cssObj = new CSS3DObject(frameEl); 
     cssObj.position.set(-585, floorY + 150, -300); 
