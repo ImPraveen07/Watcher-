@@ -1,11 +1,10 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Happy Birthday Indu</title>
+    <title>Watch Mode - Happy Birthday Indu</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; user-select: none; }
         #loader-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffe6f2; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
@@ -20,61 +19,52 @@
         #loader-stats { color: #ff85c1; font-size: 11px; margin-top: 8px; font-family: monospace; }
         .progress-container { width: 180px; height: 6px; background: #fff; margin-top: 15px; border-radius: 10px; overflow: hidden; border: 2px solid #ffb3d9; }
         #progress-bar { width: 0%; height: 100%; background: #ff69b4; transition: width 0.3s; }
-        #ui-layer, .action-btn { z-index: 1000; position: absolute; }
-        #ui-layer { top: 15px; width: 100%; text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        
+        /* Watch UI Overlay */
+        #watch-ui { position: fixed; top: 15px; right: 15px; z-index: 5000; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+        #user-select { background: rgba(255, 105, 180, 0.9); color: white; border: 2px solid white; border-radius: 10px; padding: 8px; font-weight: bold; outline: none; }
+        #status-bar { color: #fff; font-size: 10px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 5px; font-family: monospace; }
+
+        #ui-layer { position: absolute; top: 15px; width: 100%; text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 1000; }
         #room-display { font-size: 10px; color: #fff; background: rgba(255,105,180,0.7); padding: 4px 12px; border-radius: 15px; letter-spacing: 1px; }
-        .action-btn { left: 50%; transform: translateX(-50%); padding: 12px 24px; font-size: 13px; font-weight: bold; color: #fff; border-radius: 30px; display: none; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        #door-btn { top: 35%; background: #ff69b4; }
-        #power-btn { bottom: 85px; background: #222; transition: background 0.3s; }
-        #interact-btn { bottom: 30px; background: #007bff; }
-        #zone-move, #zone-look { position: absolute; top: 0; width: 48vw; height: 100vh; z-index: 500; }
-        #zone-move { left: 0; } #zone-look { right: 0; }
-        #joy-container { position: absolute; width: 80px; height: 80px; left: 60px; bottom: 60px; display: block; pointer-events: none; z-index: 600; }
-        #joy-base { width: 100%; height: 100%; border: 3px solid rgba(255,255,255,0.4); border-radius: 50%; background: rgba(255,105,180,0.2); backdrop-filter: blur(2px); }
-        #joy-stick { position: absolute; top: 50%; left: 50%; width: 35px; height: 35px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(255,105,180,0.5); }
         #html-frame-element { width: 1280px; height: 720px; background: #000; border: 10px solid #111; box-sizing: border-box; border-radius: 10px; }
         #totify-iframe { width: 100%; height: 100%; border: none; }
-        #touch-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 99; }
     </style>
 </head>
 <body>
 
 <div id="loader-screen">
     <div class="cat-loader"><div class="cat-eyes"></div></div>
-    <div class="loader-text" id="loader-msg">Getting things ready... ✨</div>
+    <div class="loader-text" id="loader-msg">Initializing Watcher... ✨</div>
     <div id="loader-stats">0.0 MB / CALCULATING...</div>
     <div class="progress-container"><div id="progress-bar"></div></div>
+</div>
+
+<div id="watch-ui">
+    <select id="user-select">
+        <option value="">SELECT USER TO WATCH</option>
+    </select>
+    <div id="status-bar">LIVE: NO TARGET</div>
 </div>
 
 <div id="ui-layer">
     <div id="room-display">SPAWN ROOM</div>
 </div>
 
-<button id="door-btn" class="action-btn">🚪 OPEN DOOR</button>
-<button id="power-btn" class="action-btn">🔌 POWER ON</button>
-<button id="interact-btn" class="action-btn">🎯 INTERACT</button>
-
-<div id="zone-move"></div><div id="zone-look"></div>
-<div id="joy-container"><div id="joy-base"></div><div id="joy-stick"></div></div>
-
 <div id="html-frame-element" style="display:none;">
-    <div id="touch-blocker"></div>
     <iframe id="totify-iframe" allow="microphone"></iframe>
-
 </div>
-
 
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module">
-    // 1. ALL IMPORTS FIRST
     import * as THREE from 'three';
     import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, push, onValue, onChildAdded, onChildRemoved, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // 2. FIREBASE CONFIG & INITIALIZATION
+    // --- CONFIG ---
     const firebaseConfig = {
       apiKey: "AIzaSyDHJN7qXE0xaaOT39XCf_pbyeVQgNYoUeY",
       authDomain: "haaa-6f437.firebaseapp.com",
@@ -88,54 +78,56 @@
 
     const app = initializeApp(firebaseConfig); 
     const db_fb = getDatabase(app);
-    const playerId = Math.random().toString(36).substring(7);
-    const playerRef = ref(db_fb, `players/${playerId}`);
-    const playersRef = ref(db_fb, 'players');
 
-    let otherPlayers = {}; 
-    
-    let activeRoomObjects = {}; // Tracks GLBs currently in the room
-// --- RECORDING SETTINGS ---
-let isRecording = true; 
-let currentSessionId = "session_" + Date.now();
-let lastRecordTime = 0;
-const recordFreq = 100; // Captures 10 frames per second for smooth playback
+    // --- REPLAY STATE ---
+    let activeReplayFrames = [];
+    let currentFrameIdx = 0;
+    let isWatching = false;
 
-    let lastMoveTime = Date.now();
-    const AFK_TIMEOUT = 45000; 
-
-    // Now THREE is defined, so this won't crash
-    function createPlayerMesh() {
-        const group = new THREE.Group();
-        const capGeo = new THREE.CapsuleGeometry(8, 15, 4, 8);
-        const material = new THREE.MeshStandardMaterial({ 
-            color: new THREE.Color(`hsl(${Math.random() * 360}, 80%, 60%)`),
-            emissive: new THREE.Color(0x222222)
-        });
-        const mesh = new THREE.Mesh(capGeo, material);
-        mesh.position.y = 25; 
-        group.add(mesh);
-        return group;
-    }
-
-    // 3. CORE LOGIC REMAINS SAME
+    // --- DB & THREE CONSTANTS ---
     const DB_NAME = "INDU5", STORE_NAME = "indu5";
     let db = null;
-    const initDB = () => new Promise((res) => {
+    const floorY = -50, T = 350, W = 1200, H = 1200, ceilingY = floorY + T;
+    let isDoorOpen = false, isPowered = false, surpriseTriggered = false;
+    let mixers = [];
+    const clock = new THREE.Clock();
+    const scene = new THREE.Scene();
+    const cssScene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 7000);
+    camera.rotation.order = 'YXZ';
+    
+    const bgm = new Audio('song.mp3'); bgm.loop = true;
+
+    // --- RENDERERS ---
+    const cssRenderer = new CSS3DRenderer();
+    cssRenderer.setSize(window.innerWidth, window.innerHeight);
+    cssRenderer.domElement.style.position = 'absolute'; cssRenderer.domElement.style.top = '0';
+    cssRenderer.domElement.style.zIndex = '1'; cssRenderer.domElement.style.pointerEvents = 'none';
+    document.body.appendChild(cssRenderer.domElement);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setClearColor(0x111111, 1);
+    renderer.domElement.style.position = 'absolute'; renderer.domElement.style.top = '0';
+    renderer.domElement.style.zIndex = '2';
+    document.body.appendChild(renderer.domElement);
+
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.1); scene.add(ambLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.1); dirLight.position.set(0, 300, 0); scene.add(dirLight);
+
+    // --- DATABASE UTILS ---
+    const initDB = () => new Promise(res => {
         const req = indexedDB.open(DB_NAME, 2);
-        req.onupgradeneeded = e => {
-            let database = e.target.result;
-            if (!database.objectStoreNames.contains(STORE_NAME)) database.createObjectStore(STORE_NAME);
-        };
         req.onsuccess = e => { db = e.target.result; res(); };
-        req.onerror = () => res();
     });
     const getCached = (key) => new Promise(res => {
         if (!db) return res(null);
-        const tx = db.transaction(STORE_NAME, "readonly");
-        const req = tx.objectStore(STORE_NAME).get(key);
+        const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(key);
         req.onsuccess = () => res(req.result);
-        req.onerror = () => res(null);
     });
     const saveCached = (key, blob) => new Promise(res => {
         if (!db) return res();
@@ -144,60 +136,8 @@ const recordFreq = 100; // Captures 10 frames per second for smooth playback
         tx.oncomplete = () => res();
     });
 
-    const floorY = -50, T = 350, W = 1200, H = 1200, ceilingY = floorY + T;
-    let isDoorOpen = false, isPowered = false, isInteracting = false;
-    let velocity = new THREE.Vector3(), move = {x:0, y:0}, mixers = [];
-    const clock = new THREE.Clock();
-    const scene = new THREE.Scene(); 
-    // Add this near line 124
-const bgm = new Audio('song.mp3');
-bgm.loop = true;
-let targetVol = 1.0; 
-
-    const cssScene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 1, 7000);
-    camera.rotation.order = 'YXZ';
-
-    const cssRenderer = new CSS3DRenderer();
-    cssRenderer.setSize(window.innerWidth, window.innerHeight);
-    cssRenderer.domElement.style.position = 'absolute';
-    cssRenderer.domElement.style.top = '0';
-    cssRenderer.domElement.style.zIndex = '1';
-    cssRenderer.domElement.style.pointerEvents = 'none'; 
-    document.body.appendChild(cssRenderer.domElement);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = .5;
-    renderer.setClearColor(0x111111, 1); 
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = '0';
-    renderer.domElement.style.zIndex = '2'; 
-    document.body.appendChild(renderer.domElement);
-
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
-    // RESTORED OLD LIGHTING SPECS
-    const ambLight = new THREE.AmbientLight(0xffffff, 0.1);
-    scene.add(ambLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.1);
-    dirLight.position.set(0, 300, 0); 
-    scene.add(dirLight);
-
-    const texLoader = new THREE.TextureLoader();
-    const loader = new GLTFLoader();
-    const sharedPlaneGeom = new THREE.PlaneGeometry(1, 1);
-    const textureCache = {};
-    const getTex = (url) => { 
-        if (!textureCache[url]) { textureCache[url] = texLoader.load(url); }
-        return textureCache[url]; 
-    };
-
-const glbItems = [
+    // --- ASSETS DATA (GLBs & Images preserved) ---
+    const glbItems = [
         { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
         { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
         { src: 'tablecloth_lowpoly.glb', p: [5, -35, -380], r: [0, 0], s: [90, 90, 90] },
@@ -225,215 +165,7 @@ const glbItems = [
 { src: 'cloth_in_wind_on_ball_printable.glb', p: [-535, 74, -179], r: [0, 67], s: [12, 12, 12] }
 
 ];
-async function boot() {
-    await initDB();
-    const statsText = document.getElementById('loader-stats');
-    const progressBar = document.getElementById('progress-bar');
-    const msgText = document.getElementById('loader-msg');
-    let loadedCount = 0, totalMB = 0;
-
-    const videoFiles = ['carparty.mp4', 'indu1.mp4', 'bday.mp4'];
-    const totalItems = glbItems.length + videoFiles.length;
-    const fadingOut = new Set(); // Tracks items currently in 5s fade
-
-    // 1. Load Hardcoded GLB Models
-    for (let item of glbItems) {
-        let blob = await getCached(item.src);
-        if (!blob) {
-            msgText.innerText = `Fetching: ${item.src}`;
-            const res = await fetch(item.src); 
-            blob = await res.blob();
-            await saveCached(item.src, blob);
-        }
-        
-        if (blob) totalMB += (blob.size / (1024 * 1024));
-        loadedCount++;
-        statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
-        progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
-
-        if(blob) {
-            const url = URL.createObjectURL(blob);
-            loader.load(url, (gltf) => {
-                const model = gltf.scene;
-                model.userData.src = item.src; // CRITICAL TAG
-                model.traverse(node => {
-                    if (node.isMesh && node.material) {
-                        if (item.src === 'indu.glb' || item.src === 'hbday.glb') {
-                            node.material.metalness = 1.0; node.material.roughness = 0.05; node.material.envMapIntensity = 15.0;
-                        } else { node.material.metalness = 0.0; node.material.roughness = 0.8; }
-                    }
-                });
-                model.position.set(item.p[0], item.p[1], item.p[2]);
-                model.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
-                model.scale.set(item.s[0], item.s[1], item.s[2]);
-                if (gltf.animations.length > 0) {
-                    const mixer = new THREE.AnimationMixer(model);
-                    gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-                    mixers.push(mixer);
-                }
-                scene.add(model); 
-                URL.revokeObjectURL(url);
-            });
-        }
-    }
-
-    // 2. Cache Videos
-    for (const fileName of videoFiles) {
-        let videoBlob = await getCached(fileName);
-        if (!videoBlob) {
-            msgText.innerText = `Caching Video: ${fileName}`;
-            try {
-                const vRes = await fetch(fileName);
-                videoBlob = await vRes.blob();
-                await saveCached(fileName, videoBlob);
-            } catch (err) { console.warn(`Video fail: ${fileName}`, err); }
-        }
-        if (videoBlob) totalMB += (videoBlob.size / (1024 * 1024));
-        loadedCount++; 
-        statsText.innerText = `${totalMB.toFixed(1)} MB Loaded`;
-        progressBar.style.width = `${(loadedCount / totalItems) * 100}%`;
-    }
-
-
-    // 3. Load Static Image Planes
-    staticItems.forEach(d => {
-        const m = new THREE.Mesh(
-            sharedPlaneGeom, 
-            new THREE.MeshBasicMaterial({ 
-                map: getTex(d.src), 
-                side: 2, 
-                transparent: true,
-                alphaTest: 0.5,     // Discards black pixels
-                opacity: 1          
-            })
-        );
-        
-        // Apply position, rotation, and scale from staticItems array
-        m.position.set(d.p[0], d.p[1], d.p[2]);
-        m.rotation.set(
-            THREE.MathUtils.degToRad(d.r[0] || 0), 
-            THREE.MathUtils.degToRad(d.r[1] || 0), 
-            THREE.MathUtils.degToRad(d.r[2] || 0)
-        );
-        
-        // Handle 2D scale [w, h] or 3D scale [w, h, d]
-        if (d.s.length === 2) {
-            m.scale.set(d.s[0], d.s[1], 1);
-        } else {
-            m.scale.set(d.s[0], d.s[1], d.s[2]);
-        }
-        
-        scene.add(m);
-    }); // <--- LOOP CLOSED PROPERLY HERE
-
-    // --- MULTIPLAYER SYNC ---
-    onDisconnect(playerRef).remove();
-    
-    onChildAdded(playersRef, (snapshot) => {
-        if (snapshot.key === playerId) return;
-        otherPlayers[snapshot.key] = createPlayerMesh();
-        scene.add(otherPlayers[snapshot.key]);
-    });
-
-    onChildRemoved(playersRef, (snapshot) => {
-        if (otherPlayers[snapshot.key]) { 
-            scene.remove(otherPlayers[snapshot.key]); 
-            delete otherPlayers[snapshot.key]; 
-        }
-    });
-
-    onValue(playersRef, (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-        for (let id in data) {
-            if (id !== playerId && otherPlayers[id]) {
-                const targetPos = new THREE.Vector3(data[id].x, data[id].y - 40, data[id].z);
-                otherPlayers[id].position.lerp(targetPos, 0.2);
-            }
-        }
-    });
-
-    // --- SYNCED ACTIVE FOLDER ---
-    onChildAdded(ref(db_fb, 'collections/active'), async (snapshot) => {
-        const syncItem = snapshot.val();
-        const id = snapshot.key;
-        let blob = await getCached(syncItem.src);
-        if (!blob) {
-            try {
-                const res = await fetch(syncItem.src);
-                blob = await res.blob();
-                await saveCached(syncItem.src, blob);
-            } catch (e) { return; }
-        }
-        const url = URL.createObjectURL(blob);
-        loader.load(url, (gltf) => {
-            const model = gltf.scene;
-            model.userData.src = syncItem.src; 
-            model.position.set(syncItem.p[0], syncItem.p[1], syncItem.p[2]);
-            model.rotation.set(THREE.MathUtils.degToRad(syncItem.r[0]), THREE.MathUtils.degToRad(syncItem.r[1]), 0);
-            model.scale.set(syncItem.s[0], syncItem.s[1], syncItem.s[2]);
-            scene.add(model);
-            activeRoomObjects[id] = model;
-            URL.revokeObjectURL(url);
-        });
-    });
-
-    onChildRemoved(ref(db_fb, 'collections/active'), (snapshot) => {
-        const model = activeRoomObjects[snapshot.key];
-        if (model) { scene.remove(model); delete activeRoomObjects[snapshot.key]; }
-    });
-
-    // --- THE UNIFIED BIN WATCHER ---
-    onValue(ref(db_fb, 'collections/bin'), (snapshot) => {
-        const binData = snapshot.val() || {};
-        const filesInBin = Object.keys(binData).map(k => k.replace(/_([^_]+)$/, '.$1'));
-
-        scene.traverse((obj) => {
-            if (obj.userData && obj.userData.src) {
-                const fileName = obj.userData.src;
-                const shouldBeHidden = filesInBin.includes(fileName);
-
-                if (shouldBeHidden && obj.visible && !fadingOut.has(fileName)) {
-                    fadingOut.add(fileName);
-                    let op = 1.0;
-                    const fadeOutInterval = setInterval(() => {
-                        op -= 0.0071; 
-                        obj.traverse(n => { 
-                            if(n.isMesh) { 
-                                n.material.transparent = true; 
-                                n.material.opacity = op; 
-                            }
-                        });
-
-                        if (op <= 0) {
-                            clearInterval(fadeOutInterval);
-                            obj.visible = false;
-                            fadingOut.delete(fileName);
-                        }
-                    }, 50);
-                }
-                else if (!shouldBeHidden && !obj.visible) {
-                    obj.visible = true;
-                    obj.traverse(n => { if(n.isMesh) { n.material.opacity = 1.0; n.material.transparent = false; }});
-                }
-            }
-        });
-    });
-
-    // 5. Finalize Loader
-    setTimeout(() => { 
-        const loaderScreen = document.getElementById('loader-screen');
-        if (loaderScreen) {
-            loaderScreen.style.opacity = '0'; 
-            setTimeout(() => { 
-                loaderScreen.style.display = 'none'; 
-                animate(); 
-            }, 500);
-        }
-    }, 1500);
-} // This closes the boot() function
-
-    const staticItems = [
+        const staticItems = [
                // --- LARGE STRUCTURES & WALLS ---
         {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[487,-46,-177], r:[90,0], s:[368,368]}, {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[487,-46,-545], r:[270,0], s:[368,368]},
             {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[119,-46,-545], r:[270,180], s:[368,368]}, {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[119,-46,-177], r:[90,180], s:[368,368]},
@@ -694,263 +426,227 @@ async function boot() {
     { src: 'IMG-20260131-WA0003.jpg', p: [-3, 13, -403], r: [90, 360], s: [26, 26, 1] },
     { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [16, 20, 1] }
 ];
+    // --- REPLAY FETCHING ---
+    const userSelect = document.getElementById('user-select');
+    const statusText = document.getElementById('status-bar');
 
-    const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color, roughness: 0.1})); m.position.set(x,y,z); scene.add(m); return m; };
-    box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY + T, 0, "#ffffff"); 
-    box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333"); 
-    box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333"); 
-    box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333"); 
-    box(100, T-180, 15, 0, floorY+260, 0, "#333"); 
-// 1. Load both textures (Note the .jpg for the side)
-const doorMainTex = getTex('door.png');      
-const doorSideTex = getTex('doorside.jpg');  
-
-// 2. Fix the side texture scaling so it looks natural on the thin edge
-doorSideTex.wrapS = THREE.RepeatWrapping;
-doorSideTex.wrapT = THREE.RepeatWrapping;
-// (1, 1) keeps it original; change to (1, 2) if it looks too stretched
-doorSideTex.repeat.set(1, 1); 
-
-// 3. Apply to the 6 sides (Right, Left, Top, Bottom, Front, Back)
-const doorMaterials = [
-    new THREE.MeshStandardMaterial({ map: doorSideTex }), // 0: Right thin edge
-    new THREE.MeshStandardMaterial({ map: doorSideTex }), // 1: Left thin edge
-    new THREE.MeshStandardMaterial({ color: "#111" }),    // 2: Top edge
-    new THREE.MeshStandardMaterial({ color: "#111" }),    // 3: Bottom edge
-    new THREE.MeshStandardMaterial({ map: doorMainTex }), // 4: Front face
-    new THREE.MeshStandardMaterial({ map: doorMainTex }), // 5: Back face
-];
-
-// 4. Create the door mesh
-// Dimensions: Width(100), Height(180), Thickness(8)
-const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(100, 180, 8), doorMaterials);
-doorMesh.position.set(0, floorY + 90, 0);
-scene.add(doorMesh);
-    const frameEl = document.getElementById('html-frame-element');
-    const cssObj = new CSS3DObject(frameEl); 
-    cssObj.position.set(-585, floorY + 150, -300); 
-    cssObj.rotation.y = Math.PI/2; 
-    cssObj.scale.set(0.15, 0.15, 0.15); 
-    cssScene.add(cssObj);
-
-    const occMesh = new THREE.Mesh(new THREE.PlaneGeometry(1280, 720), new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0, blending: THREE.NoBlending })); 
-    occMesh.position.copy(cssObj.position); occMesh.rotation.copy(cssObj.rotation); occMesh.scale.copy(cssObj.scale); 
-    scene.add(occMesh);
-
-    let joyId = null, lookId = null, lastL = {x:0, y:0}, joySt = {x:0, y:0};
-    const zMove = document.getElementById('zone-move'), joyS = document.getElementById('joy-stick'), joyC = document.getElementById('joy-container');
-    
-    zMove.addEventListener('touchstart', e => { 
-        if(isInteracting) return; 
-        const t = e.changedTouches[0]; joyId = t.identifier; joySt = {x:t.clientX, y:t.clientY}; 
+    onValue(ref(db_fb, 'replays'), (snapshot) => {
+        const data = snapshot.val();
+        if(!data) return;
+        userSelect.innerHTML = '<option value="">SELECT USER TO WATCH</option>';
+        Object.keys(data).forEach(uid => {
+            const opt = document.createElement('option');
+            opt.value = uid; opt.innerText = "PLAYER: " + uid;
+            userSelect.appendChild(opt);
+        });
     });
 
-    zMove.addEventListener('touchmove', e => { 
-        if(isInteracting) return; 
-        for(let t of e.changedTouches) if(t.identifier === joyId) { 
-            let dx = t.clientX-joySt.x, dy = t.clientY-joySt.y; 
-            const d = Math.min(Math.sqrt(dx*dx+dy*dy), 35), a = Math.atan2(dy, dx); 
-            joyS.style.transform = `translate(calc(-50% + ${Math.cos(a)*d}px), calc(-50% + ${Math.sin(a)*d}px))`; 
-            move = {x: Math.cos(a)*d/35, y: Math.sin(a)*d/35}; 
-        } 
-    });
-
-    zMove.addEventListener('touchend', () => { joyId=null; move={x:0,y:0}; joyS.style.transform = 'translate(-50%, -50%)'; });
-    
-    window.addEventListener('touchstart', e => { 
-        if(e.target.closest('.action-btn')) return; 
-        const t = e.changedTouches[0];
-        if (t.identifier === joyId) return;
-        if (isInteracting && e.target.id === "totify-iframe") return;
-        lookId = t.identifier; 
-        lastL = {x:t.clientX, y:t.clientY}; 
-    }, { passive: false });
-
-    window.addEventListener('touchmove', e => { 
-        for(let t of e.changedTouches) {
-            if(t.identifier === lookId) {
-                camera.rotation.y -= (t.clientX - lastL.x) * 0.0035;
-                camera.rotation.x -= (t.clientY - lastL.y) * 0.0035;
-                camera.rotation.x = Math.max(-1.4, Math.min(1.4, camera.rotation.x));
-                lastL = {x: t.clientX, y: t.clientY};
-            }
-        }
-    }, { passive: false });
-
-    window.addEventListener('touchend', e => {
-        for(let t of e.changedTouches) if(t.identifier === lookId) lookId = null;
-    });
-
-    const iBtn = document.getElementById('interact-btn'), pBtn = document.getElementById('power-btn');
-    document.getElementById('door-btn').onclick = () => isDoorOpen = !isDoorOpen;
-    pBtn.onclick = async () => { // Added 'async' here
-    isPowered = !isPowered; 
-    
-    if (isPowered) {
-        // Request Microphone Permission when turning the TV ON
-        try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            console.log("Microphone access granted");
-        } catch (err) {
-            console.log("Microphone access denied or not available:", err);
-        }
+        userSelect.onchange = async (e) => {
+        const uid = e.target.value;
+        if(!uid) { isWatching = false; return; }
         
-        document.getElementById('totify-iframe').src = "https://impraveen07.github.io/Win7/"; 
-        frameEl.style.display = 'block'; 
-    } else {
-        document.getElementById('totify-iframe').src = ""; 
-        frameEl.style.display = 'none'; 
-    }
+        onValue(ref(db_fb, `replays/${uid}`), (snap) => {
+            const sessions = snap.val();
+            if(!sessions) return; // Safety check
+            
+            const lastSessionId = Object.keys(sessions).pop();
+            const sessionData = sessions[lastSessionId];
+            
+            activeReplayFrames = Object.values(sessionData).sort((a,b) => a.t - b.t);
+            
+            // --- THE CRITICAL FIXES ---
+            currentFrameIdx = 0;
+            playbackStartTime = Date.now(); // <--- RESET THE CLOCK TO NOW
+            surpriseTriggered = false;      // Reset the party so it can happen again
+            // --------------------------
 
-    pBtn.innerText = isPowered ? "🔌 POWER OFF" : "🔌 POWER ON"; 
-    pBtn.style.background = isPowered ? "#dc3545" : "#222"; 
-};
-
-    
-    iBtn.onclick = () => { 
-        isInteracting = !isInteracting; 
-        if(isInteracting) { 
-            cssRenderer.domElement.style.zIndex='999'; cssRenderer.domElement.style.pointerEvents='auto'; 
-            renderer.domElement.style.zIndex='1'; 
-            joyC.style.display = 'none'; document.getElementById('touch-blocker').style.display='none'; 
-            iBtn.innerText="🔒 EXIT INTERACT"; iBtn.style.background="#dc3545"; 
-        } else { 
-            renderer.domElement.style.zIndex='2'; cssRenderer.domElement.style.zIndex='1'; cssRenderer.domElement.style.pointerEvents='none'; 
-            joyC.style.display = 'block'; document.getElementById('touch-blocker').style.display='block'; 
-            iBtn.innerText="🎯 INTERACT"; iBtn.style.background="#007bff"; move={x:0,y:0}; 
-        } 
+            isWatching = true;
+            statusText.innerText = "PLAYING: " + uid;
+        }, { onlyOnce: true });
     };
 
-    camera.position.set(0, 50, 400);
-    const fVec = new THREE.Vector3(), rVec = new THREE.Vector3();
-    let surpriseTriggered = false, fadeLight = false;
-    const poppers = [], balloons = [], popColors = [0xff69b4, 0xffb3d9, 0xff1493, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff, 0xffa500];
 
+    // --- BOOT ENGINE ---
+    const texLoader = new THREE.TextureLoader();
+    const loader = new GLTFLoader();
+    
+    async function boot() {
+        await initDB();
+        const stats = document.getElementById('loader-stats');
+        const progress = document.getElementById('progress-bar');
+        
+        let loaded = 0, totalMB = 0;
+        const totalItems = glbItems.length + staticItems.length;
+
+        // Load GLBs
+        for(let item of glbItems) {
+            let blob = await getCached(item.src);
+            if(!blob) { const res = await fetch(item.src); blob = await res.blob(); await saveCached(item.src, blob); }
+            totalMB += blob.size / (1024*1024);
+            stats.innerText = `${totalMB.toFixed(1)} MB Loaded`;
+            loaded++; progress.style.width = `${(loaded/totalItems)*100}%`;
+            
+            loader.load(URL.createObjectURL(blob), (gltf) => {
+                const m = gltf.scene;
+                m.position.set(item.p[0], item.p[1], item.p[2]);
+                m.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
+                m.scale.set(item.s[0], item.s[1], item.s[2]);
+                if (gltf.animations.length > 0) {
+                    const mixer = new THREE.AnimationMixer(m);
+                    gltf.animations.forEach(c => mixer.clipAction(c).play());
+                    mixers.push(mixer);
+                }
+                scene.add(m);
+            });
+        }
+
+        // Load Images
+        staticItems.forEach(d => {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({map: texLoader.load(d.src), side:2, transparent:true}));
+            m.position.set(d.p[0], d.p[1], d.p[2]);
+            m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0);
+            m.scale.set(d.s[0], d.s[1], 1);
+            scene.add(m);
+        });
+
+        setupWorld();
+        setTimeout(() => { 
+            document.getElementById('loader-screen').style.opacity = '0'; 
+            setTimeout(() => { document.getElementById('loader-screen').style.display='none'; animate(); }, 500);
+        }, 1000);
+    }
+
+    let doorMesh, cssObj;
+    function setupWorld() {
+        const box = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color})); m.position.set(x,y,z); scene.add(m); return m; };
+        box(W, 2, H, 0, floorY, 0, "#222"); box(W, 2, H, 0, floorY+T, 0, "#fff");
+        box(W, T, 10, 0, floorY+T/2, 605, "#333"); box(W, T, 10, 0, floorY+T/2, -605, "#333");
+        box(10, T, H, -605, floorY+T/2, 0, "#333"); box(10, T, H, 605, floorY+T/2, 0, "#333");
+        box(550, T, 15, -325, floorY+T/2, 0, "#333"); box(550, T, 15, 325, floorY+T/2, 0, "#333");
+        box(100, T-180, 15, 0, floorY+260, 0, "#333"); doorMesh = box(100, 180, 8, 0, floorY+90, 0, "#111");
+
+        const frameEl = document.getElementById('html-frame-element');
+        cssObj = new CSS3DObject(frameEl);
+        cssObj.position.set(-585, floorY + 150, -300); cssObj.rotation.y = Math.PI/2; cssObj.scale.set(0.15, 0.15, 0.15);
+        cssScene.add(cssObj);
+    }
+
+    const popColors = [0xff69b4, 0xffb3d9, 0xff1493, 0xffff00, 0xff00ff, 0x00ffff];
+    const poppers = [], balloons = [];
     function triggerParty() {
-    // Start the music exactly when the animation starts
-    bgm.play().catch(err => console.log("Audio needs a click to start!"));
+        bgm.play().catch(() => {});
+        for(let i=0; i<300; i++) {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(5,5), new THREE.MeshBasicMaterial({color: popColors[Math.floor(Math.random()*6)], side:2}));
+            m.position.set((Math.random()-0.5)*900, 330, -100-Math.random()*500);
+            scene.add(m);
+            poppers.push({mesh:m, vel: new THREE.Vector3((Math.random()-0.5)*3, -Math.random()*2-1, (Math.random()-0.5)*3)});
+        }
+    }
+// Global State for Replay
+let playbackStartTime = 0;
 
-    fadeLight = true;
-    const stripGeo = new THREE.PlaneGeometry(8, 3);
-    const squareGeo = new THREE.PlaneGeometry(5, 5);
-    const dotGeo = new THREE.CircleGeometry(3, 8);
+function getCurrentReplayFrame() {
+    if (!isWatching || activeReplayFrames.length === 0) return null;
 
-    for(let i=0; i<800; i++) {
-        const geos = [stripGeo, squareGeo, dotGeo];
-        const m = new THREE.Mesh(geos[Math.floor(Math.random()*3)], new THREE.MeshBasicMaterial({color: popColors[Math.floor(Math.random()*popColors.length)], side:2}));
-        m.position.set((Math.random()-0.5)*900, 330, -100 - Math.random()*500); 
-        scene.add(m);
-        poppers.push({ mesh: m, vel: new THREE.Vector3((Math.random()-0.5)*3.5, - (Math.random()*1.8 + 1.2), (Math.random()-0.5)*3.5), rot: new THREE.Vector3(Math.random()*0.2, Math.random()*0.2, 0) });
+    if (playbackStartTime === 0) playbackStartTime = Date.now();
+    
+    const elapsed = Date.now() - playbackStartTime;
+    const startT = activeReplayFrames[0].t;
+
+    // Search for the frame that matches the current elapsed time
+    let foundIndex = currentFrameIdx;
+    for (let i = currentFrameIdx; i < activeReplayFrames.length; i++) {
+        if (activeReplayFrames[i].t - startT <= elapsed) {
+            foundIndex = i;
+        } else {
+            break;
+        }
     }
 
-    for(let i=0; i<40; i++) {
-        const bGrp = new THREE.Group();
-        const bGeo = new THREE.SphereGeometry(14, 20, 20); bGeo.scale(1, 1.3, 1);
-        const bMesh = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({ color: popColors[Math.floor(Math.random()*popColors.length)], metalness: 0.1, roughness: 0.1, transparent: true, opacity: 0.9 }));
-        const knot = new THREE.Mesh(new THREE.ConeGeometry(3, 4, 8), bMesh.material); knot.position.y = -18; knot.rotation.x = Math.PI; bMesh.add(knot);
-        bGrp.add(bMesh); bGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -18, 0), new THREE.Vector3(0, -120, 0)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })));
-        bGrp.position.set((Math.random()-0.5)*700, floorY - 50, -100 - Math.random()*500);
-        scene.add(bGrp);
-        balloons.push({ obj: bGrp, speed: 1.5 + Math.random() * 2, off: Math.random() * 100, atCeiling: false });
+    // Reset if we reached the end
+    if (foundIndex >= activeReplayFrames.length - 1) {
+        playbackStartTime = Date.now();
+        currentFrameIdx = 0;
+        return activeReplayFrames[0];
     }
+
+    currentFrameIdx = foundIndex;
+    return activeReplayFrames[foundIndex];
 }
+// Linear Interpolation helper
+const lerp = (start, end, t) => start + (end - start) * t;
+
+function getInterpolatedFrame() {
+    if (!isWatching || activeReplayFrames.length < 2) return null;
+
+    if (playbackStartTime === 0) playbackStartTime = Date.now();
+    const elapsed = Date.now() - playbackStartTime;
+    const startT = activeReplayFrames[0].t;
+    const currentPlayTime = elapsed + startT;
+
+    // Find the two frames we are currently between
+    let i = 0;
+    while (i < activeReplayFrames.length - 2 && activeReplayFrames[i + 1].t < currentPlayTime) {
+        i++;
+    }
+
+    const frameA = activeReplayFrames[i];
+    const frameB = activeReplayFrames[i + 1];
+
+    // Calculate how far we are between A and B (0.0 to 1.0)
+    const totalGap = frameB.t - frameA.t;
+    const timeIntoGap = currentPlayTime - frameA.t;
+    const alpha = Math.max(0, Math.min(1, timeIntoGap / totalGap));
+
+    // Reset loop
+    if (i >= activeReplayFrames.length - 2 && alpha >= 1) {
+        playbackStartTime = Date.now();
+        return activeReplayFrames[0];
+    }
+
+    // Return a "Blended" frame
+    return {
+        x: lerp(frameA.x, frameB.x, alpha),
+        y: lerp(frameA.y || 50, frameB.y || 50, alpha),
+        z: lerp(frameA.z, frameB.z, alpha),
+        ry: lerp(frameA.ry, frameB.ry, alpha),
+        rx: lerp(frameA.rx || 0, frameB.rx || 0, alpha),
+        dr: frameA.dr, // Boolean states don't lerp
+        tv: frameA.tv,
+        py: frameA.py
+    };
+}
+
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta(), time = Date.now() * 0.001;
-    const now = Date.now(); // Current time for recorder
-    
+    const delta = clock.getDelta();
     mixers.forEach(m => m.update(delta));
-    
-    // --- 1. SILENT RECORDER (Saves to RTDB 'replays') ---
-    // Records movement, door, tv, and party status every 100ms
-    if (isRecording && now - lastRecordTime > recordFreq) {
-        const replayRef = ref(db_fb, `replays/${playerId}/${currentSessionId}`);
-        push(replayRef, {
-            x: camera.position.x,
-            y: camera.position.y,
-            z: camera.position.z,
-            rx: camera.rotation.x,
-            ry: camera.rotation.y,
-            door: isDoorOpen,         // Saves door state
-            tv: isPowered,            // Saves TV state
-            party: surpriseTriggered, // Saves if party started
-            t: now
-        });
-        lastRecordTime = now;
-    }
 
-    // --- MULTIPLAYER & AFK LOGIC ---
-    if(!isInteracting && (move.x !== 0 || move.y !== 0)) { 
-        lastMoveTime = Date.now(); // Reset AFK
-        fVec.set(0,0,-1).applyQuaternion(camera.quaternion); fVec.y=0; fVec.normalize(); 
-        rVec.set(1,0,0).applyQuaternion(camera.quaternion); rVec.y=0; rVec.normalize(); 
-        velocity.add(fVec.multiplyScalar(-move.y *.8)).add(rVec.multiplyScalar(move.x * 1.5)); 
+    const f = getInterpolatedFrame(); // Use the smooth version
+
+    if (f) {
+        // Now using smooth LERP coordinates
+        camera.position.set(f.x, f.y, f.z);
+        camera.rotation.set(f.rx, f.ry, 0);
         
-        // Update Firebase
-        set(playerRef, { id: playerId, x: camera.position.x, y: camera.position.y, z: camera.position.z });
+        // Logic updates (Door/TV/Party)
+        isDoorOpen = f.dr;
+        if(isPowered !== f.tv) {
+            isPowered = f.tv;
+            document.getElementById('totify-iframe').src = isPowered ? "https://impraveen07.github.io/Win7/" : "";
+            document.getElementById('html-frame-element').style.display = isPowered ? 'block' : 'none';
+        }
+        if(f.py && !surpriseTriggered) { surpriseTriggered = true; triggerParty(); }
     }
 
-    if (Date.now() - lastMoveTime > 420000) {
-        alert("Kicked for AFK");
-        set(playerRef, null);
-        window.location.reload();
-        return;
-    } // --- END MULTIPLAYER LOGIC ---
-
-    // --- SMOOTH VOLUME CONTROL ---
-    const distToTV = camera.position.distanceTo(cssObj.position);
-    
-    if (isPowered) {
-        targetVol = 0.1; 
-    } else if (distToTV < 400) {
-        targetVol = 0.8; 
-    } else {
-        targetVol = 1.0; 
-    }
-
-    if (bgm && !bgm.paused) {
-        bgm.volume += (targetVol - bgm.volume) * 0.02;
-    }
-
-    // --- PARTY TRIGGER ---
-    if(!surpriseTriggered && camera.position.z < 0 && isDoorOpen) { 
-        surpriseTriggered = true; 
-        triggerParty(); 
-        bgm.play().catch(() => console.log("User interaction required for audio"));
-    }
-    
-    if(fadeLight) { ambLight.intensity += (1.4 - ambLight.intensity) * 0.05; dirLight.intensity += (2.5 - dirLight.intensity) * 0.05; }
-    
-    // --- ANIMATION UPDATES (Confetti/Balloons) ---
-    poppers.forEach(p => { if(p.mesh.position.y > floorY + 2) { p.mesh.position.add(p.vel); p.mesh.rotation.x += p.rot.x; p.mesh.rotation.y += p.rot.y; } });
-    
-    balloons.forEach(b => { 
-        if(!b.atCeiling) { b.obj.position.y += b.speed; b.obj.position.x += Math.sin(time + b.off) * 0.3; if(b.obj.position.y >= ceilingY - 18) b.atCeiling = true; } 
-        else { b.obj.position.y = (ceilingY - 18) + Math.sin(time * 0.8 + b.off) * 2; b.obj.rotation.z = Math.sin(time + b.off) * 0.1; }
-    });
-
-    // --- PHYSICS & COLLISION ---
-    velocity.multiplyScalar(0.9); camera.position.add(velocity);
-    camera.position.x = Math.max(-550, Math.min(550, camera.position.x)); camera.position.z = Math.max(-550, Math.min(550, camera.position.z));
-    
-    if(Math.abs(camera.position.z) < 25 && (!isDoorOpen || Math.abs(camera.position.x) > 45)) camera.position.z = camera.position.z > 0 ? 25 : -25;
-    
-    // --- UI VISIBILITY ---
-    document.getElementById('door-btn').style.display = Math.abs(camera.position.z) < 180 ? 'block' : 'none';
-    pBtn.style.display = (camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 450) ? 'block' : 'none';
-    iBtn.style.display = (isPowered && camera.position.z < 0 && camera.position.distanceTo(cssObj.position) < 350) ? 'block' : 'none';
-    
-    // --- DOOR ANIMATION ---
+    // Door still slides smoothly
     doorMesh.position.x += ((isDoorOpen ? -110 : 0) - doorMesh.position.x) * 0.1;
-    
-    // --- RENDER ---
-    cssRenderer.render(cssScene, camera); 
-    renderer.render(scene, camera); 
-    document.getElementById('room-display').innerText = camera.position.z > 0 ? "SPAWN ROOM" : "TV ROOM";
+
+    cssRenderer.render(cssScene, camera);
+    renderer.render(scene, camera);
 }
 
-    
-   boot();
+    boot();
 </script>
 </body>
 </html>
