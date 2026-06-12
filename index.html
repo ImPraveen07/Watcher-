@@ -24,7 +24,6 @@
         #user-select { background: rgba(255, 105, 180, 0.9); color: white; border: 2px solid white; border-radius: 10px; padding: 8px; font-weight: bold; outline: none; }
         #status-bar { color: #fff; font-size: 10px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 5px; font-family: monospace; }
         
-        /* NEW: Delete Data Button */
         #delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; letter-spacing: 1px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: background 0.2s;}
         #delete-btn:active { background: #a71d2a; }
 
@@ -66,7 +65,6 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    // ADDED 'set' import to allow deleting data
     import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     // --- CONFIG ---
@@ -124,24 +122,37 @@
     const ambLight = new THREE.AmbientLight(0xffffff, 0.1); scene.add(ambLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.1); dirLight.position.set(0, 300, 0); scene.add(dirLight);
 
-    // --- DATABASE UTILS ---
-    const initDB = () => new Promise(res => {
+    // --- BULLETPROOF DATABASE UTILS ---
+    const initDB = () => new Promise((res) => {
         const req = indexedDB.open(DB_NAME, 2);
+        req.onupgradeneeded = e => {
+            let database = e.target.result;
+            if (!database.objectStoreNames.contains(STORE_NAME)) database.createObjectStore(STORE_NAME);
+        };
         req.onsuccess = e => { db = e.target.result; res(); };
+        req.onerror = () => { console.warn("IDB failed, continuing without cache."); res(); };
     });
+    
     const getCached = (key) => new Promise(res => {
         if (!db) return res(null);
-        const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(key);
-        req.onsuccess = () => res(req.result);
+        try {
+            const req = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(key);
+            req.onsuccess = () => res(req.result);
+            req.onerror = () => res(null);
+        } catch(e) { res(null); }
     });
+    
     const saveCached = (key, blob) => new Promise(res => {
         if (!db) return res();
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        tx.objectStore(STORE_NAME).put(blob, key);
-        tx.oncomplete = () => res();
+        try {
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            tx.objectStore(STORE_NAME).put(blob, key);
+            tx.oncomplete = () => res();
+            tx.onerror = () => res();
+        } catch(e) { res(); }
     });
 
-    // --- ASSETS DATA (GLBs & Images preserved) ---
+    // --- ASSETS DATA ---
     const glbItems = [
         { src: '2533ef500ece4fcc804872c706df036b (1).glb', p: [-7, 177, 7], r: [0, 0], s: [41, 41, 41] },
         { src: 'stage.glb', p: [-30, 97, -564], r: [0, 90], s: [173, 173, 173] },
@@ -168,6 +179,7 @@
         { src: 'statue01.glb', p: [-537, 83, -56], r: [0, 185], s: [132, 132, 132] },
         { src: 'cloth_in_wind_on_ball_printable.glb', p: [-535, 74, -179], r: [0, 67], s: [12, 12, 12] }
     ];
+    
     const staticItems = [
         {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[487,-46,-177], r:[90,0], s:[368,368]}, {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[487,-46,-545], r:[270,0], s:[368,368]},
         {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[119,-46,-545], r:[270,180], s:[368,368]}, {src:'Picsart_26-01-08_18-59-32-352.jpg', p:[119,-46,-177], r:[90,180], s:[368,368]},
@@ -212,7 +224,6 @@
         { src: 'images - 2026-01-30T183236.100.jpeg', p: [-237, 298, 366], r: [90, 0], s: [800, 800] },
         { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, 366], r: [90, 0], s: [800, 800] },
         { src: 'images - 2026-01-30T183236.100.jpeg', p: [563, 298, -433], r: [90, 0], s: [800, 800] },
-        // --- DETAIL PIECES ---
         { src: '91.png', p: [573, 68, -577], r: [0, 295], s: [16, 20, 1] },
         { src: '92.png', p: [573, 68, -535], r: [0, 284], s: [16, 20, 1] },
         { src: '93.png', p: [573, 68, -501], r: [0, 254], s: [16, 20, 1] },
@@ -409,7 +420,7 @@
     const userSelect = document.getElementById('user-select');
     const statusText = document.getElementById('status-bar');
     
-    // NEW: Function to delete all data
+    // DELETE DATA FUNCTION
     document.getElementById('delete-btn').onclick = () => {
         if(confirm("Are you sure you want to delete ALL saved replays? This cannot be undone.")) {
             set(ref(db_fb, 'replays'), null).then(() => {
@@ -465,43 +476,71 @@
         await initDB();
         const stats = document.getElementById('loader-stats');
         const progress = document.getElementById('progress-bar');
+        const msgText = document.getElementById('loader-msg');
         
         let loaded = 0, totalMB = 0;
         const totalItems = glbItems.length + staticItems.length;
 
+        // LOAD GLBs SAFELY (Will not crash on 404)
         for(let item of glbItems) {
-            let blob = await getCached(item.src);
-            if(!blob) { const res = await fetch(item.src); blob = await res.blob(); await saveCached(item.src, blob); }
-            totalMB += blob.size / (1024*1024);
-            stats.innerText = `${totalMB.toFixed(1)} MB Loaded`;
-            loaded++; progress.style.width = `${(loaded/totalItems)*100}%`;
-            
-            loader.load(URL.createObjectURL(blob), (gltf) => {
-                const m = gltf.scene;
-                m.position.set(item.p[0], item.p[1], item.p[2]);
-                m.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
-                m.scale.set(item.s[0], item.s[1], item.s[2]);
-                if (gltf.animations.length > 0) {
-                    const mixer = new THREE.AnimationMixer(m);
-                    gltf.animations.forEach(c => mixer.clipAction(c).play());
-                    mixers.push(mixer);
+            try {
+                let blob = await getCached(item.src);
+                if(!blob) { 
+                    msgText.innerText = `Fetching: ${item.src}`;
+                    const res = await fetch(item.src); 
+                    if (res.ok) {
+                        blob = await res.blob(); 
+                        await saveCached(item.src, blob); 
+                    }
                 }
-                scene.add(m);
-            });
+                
+                if (blob) {
+                    totalMB += blob.size / (1024*1024);
+                    loader.load(URL.createObjectURL(blob), (gltf) => {
+                        const m = gltf.scene;
+                        m.position.set(item.p[0], item.p[1], item.p[2]);
+                        m.rotation.set(THREE.MathUtils.degToRad(item.r[0]), THREE.MathUtils.degToRad(item.r[1]), 0);
+                        m.scale.set(item.s[0], item.s[1], item.s[2]);
+                        if (gltf.animations.length > 0) {
+                            const mixer = new THREE.AnimationMixer(m);
+                            gltf.animations.forEach(c => mixer.clipAction(c).play());
+                            mixers.push(mixer);
+                        }
+                        scene.add(m);
+                    });
+                }
+            } catch (e) {
+                console.warn(`Skipped broken model: ${item.src}`);
+            }
+            loaded++; 
+            stats.innerText = `${totalMB.toFixed(1)} MB Loaded`;
+            progress.style.width = `${(loaded/totalItems)*100}%`;
         }
 
+        // LOAD IMAGES SAFELY (Will not crash on 404)
         staticItems.forEach(d => {
-            const m = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({map: texLoader.load(d.src), side:2, transparent:true}));
-            m.position.set(d.p[0], d.p[1], d.p[2]);
-            m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0);
-            m.scale.set(d.s[0], d.s[1], 1);
-            scene.add(m);
+            try {
+                const m = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({map: texLoader.load(d.src), side:2, transparent:true}));
+                m.position.set(d.p[0], d.p[1], d.p[2]);
+                m.rotation.set(THREE.MathUtils.degToRad(d.r[0]), THREE.MathUtils.degToRad(d.r[1]), 0);
+                m.scale.set(d.s[0], d.s[1], 1);
+                scene.add(m);
+            } catch (e) {
+                console.warn(`Skipped broken image: ${d.src}`);
+            }
+            loaded++;
+            progress.style.width = `${(loaded/totalItems)*100}%`;
         });
 
         setupWorld();
+        
+        // NO MATTER WHAT HAPPENS, REMOVE THE LOADING SCREEN
         setTimeout(() => { 
             document.getElementById('loader-screen').style.opacity = '0'; 
-            setTimeout(() => { document.getElementById('loader-screen').style.display='none'; animate(); }, 500);
+            setTimeout(() => { 
+                document.getElementById('loader-screen').style.display='none'; 
+                animate(); 
+            }, 500);
         }, 1000);
     }
 
@@ -560,16 +599,15 @@
             return activeReplayFrames[0];
         }
 
-        // FIXED: The variables here now match exactly what the game saves ('door', 'party')
         return {
             x: lerp(frameA.x, frameB.x, alpha),
             y: lerp(frameA.y || 50, frameB.y || 50, alpha),
             z: lerp(frameA.z, frameB.z, alpha),
             ry: lerp(frameA.ry, frameB.ry, alpha),
             rx: lerp(frameA.rx || 0, frameB.rx || 0, alpha),
-            door: frameA.door, // Changed from dr
+            door: frameA.door, 
             tv: frameA.tv,
-            party: frameA.party // Changed from py
+            party: frameA.party 
         };
     }
 
@@ -584,7 +622,6 @@
             camera.position.set(f.x, f.y, f.z);
             camera.rotation.set(f.rx, f.ry, 0);
             
-            // FIXED: Pointing at 'f.door' and 'f.party'
             isDoorOpen = f.door;
             if(isPowered !== f.tv) {
                 isPowered = f.tv;
